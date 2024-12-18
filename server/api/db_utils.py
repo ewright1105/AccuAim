@@ -1,5 +1,5 @@
-import psycopg2 # type: ignore
-import yaml # type: ignore
+import psycopg2 
+import yaml 
 import os
 
 def connect():

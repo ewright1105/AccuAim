@@ -1,24 +1,29 @@
-CREATE TABLE Users (
-    UserID INT AUTO_INCREMENT PRIMARY KEY,
+DROP TABLE IF EXISTS users, practice_sessions, shots; 
+DROP TYPE IF EXISTS shot_result;
+
+CREATE TYPE shot_result AS ENUM ('Made', 'Missed');
+
+CREATE TABLE users (
+    UserID SERIAL PRIMARY KEY,
     Email VARCHAR(255) UNIQUE NOT NULL,
     FullName VARCHAR(255),
-    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE PracticeSessions (
-    SessionID INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE practice_sessions (
+    SessionID SERIAL PRIMARY KEY,
     UserID INT NOT NULL,
-    SessionStart DATETIME DEFAULT CURRENT_TIMESTAMP,
-    SessionEnd DATETIME,
-    FOREIGN KEY (UserID) REFERENCES Users(UserID)
+    SessionStart TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    SessionEnd TIMESTAMP,
+    FOREIGN KEY (UserID) REFERENCES users(UserID)
 );
 
-CREATE TABLE Shots (
-    ShotID INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE shots (
+    ShotID SERIAL PRIMARY KEY,
     SessionID INT NOT NULL,
-    ShotTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ShotTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ShotPositionX DECIMAL(10, 2) NOT NULL,
     ShotPositionY DECIMAL(10, 2) NOT NULL,
-    Result ENUM('Made', 'Missed') NOT NULL,
-    FOREIGN KEY (SessionID) REFERENCES PracticeSessions(SessionID)
+    Result shot_result NOT NULL,
+    FOREIGN KEY (SessionID) REFERENCES practice_sessions(SessionID)
 );
