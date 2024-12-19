@@ -87,10 +87,28 @@ def record_new_shot(session_id, shot_time, shot_position_x, shot_position_y, res
         return "Shot recorded successfully."
     except Exception as e:
         return f"An error occurred while recording the shot: {e}"
+    
+def calculate_session_accuracy(session_id):
+    """
+    Retrieves # of made and total shots of given session from database and calculates shooting percentage
+
+    Args:
+        session_id (int): The session ID to fetch missed shots for.
+
+    Returns:
+        string: formatted string of shooting percentage for given session
+    """
+    num_made_shots = len(get_session_made_shots(session_id))
+    total_shots = len(get_session_shots(session_id))
+    
+    shooting_pct = f"{(num_made_shots/total_shots)*100:.2f}"
+    
+    return shooting_pct+'%'
+    
 
 
 
 if __name__ == "__main__":
     rebuild_tables()
-    print(get_session_shots(1))
+    print(calculate_session_accuracy(1))
     record_new_shot

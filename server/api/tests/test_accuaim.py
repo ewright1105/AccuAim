@@ -13,14 +13,17 @@ class TestAccuaim (unittest.TestCase):
         rebuild_tables()
         
     def test_get_session_shots(self):
-        results = get_session_shots(1)
-        self.assertEqual(2,len(results))
+        results = get_session_shots(3)
+        self.assertEqual(6,len(results))
     
     def test_get_made_shots(self):
-        results = get_session_made_shots(1)
-        self.assertEqual(1, len(results))
+        results = get_session_made_shots(3)
+        self.assertEqual(4, len(results))
         
     def test_get_missed_shots(self):
-        results = get_session_missed_shots(1)
-        self.assertEqual(1, len(results))
-
+        results = get_session_missed_shots(3)
+        self.assertEqual(2, len(results))
+        
+    def test_calculate_session_accuracy(self):
+        results = calculate_session_accuracy(3)
+        self.assertEqual('66.67%',results)
