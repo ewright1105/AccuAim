@@ -238,6 +238,16 @@ def create_user(email, full_name):
     Returns:
         str: Success or error message.
     """
+    # Check if a user with the given email already exists
+    sql_check = """
+    SELECT 1 FROM users WHERE Email = %s
+    """
+    
+    user_exists = exec_get_all(sql_check, (email,))
+    
+    if user_exists:
+        return f"Error: An account with the email {email} already exists."
+    
     sql = """
     INSERT INTO users (Email, FullName)
     VALUES (%s, %s);
@@ -248,10 +258,53 @@ def create_user(email, full_name):
         return f"User {full_name} created successfully."
     except Exception as e:
         return f"An error occurred while creating the user: {e}"
+    
+def remove_user(user_id):
+    """
+    Removes a user from the users table based on their UserID.
 
+    Args:
+        user_id (int): The ID of the user to remove.
+
+    Returns:
+        str: Success or error message.
+    """
+    # First, check if the user exists
+    sql_check = "SELECT * FROM users WHERE UserID = %s"
+    user_exists = exec_get_one(sql_check, (user_id,))
+
+    if not user_exists:
+        return "Error: User not found."
+
+    # Delete the user from the users table
+    sql_delete = "DELETE FROM users WHERE UserID = %s"
+    
+    try:
+        exec_commit(sql_delete, (user_id,))
+        return f"User with ID {user_id} removed successfully."
+    except Exception as e:
+        return f"An error occurred while removing the user: {e}"
+
+def get_user_id(user_email):
+    """ 
+    Retrieves the corresponding UserID for the user email provided
+
+    Args:
+        user_email (str): user email to fetch ID for
+        
+    Returns:
+        int: UserID for given email, or -1 if user DNE
+    """
+    sql = """
+    SELECT * 
+    FROM users
+    WHERE Email = %s"""
+    user = exec_get_one(sql, (user_email,))
+    if user:
+        return user[0]
+    return -1
+    
 if __name__ == "__main__":
     rebuild_tables()
     print(get_all_users())
-    create_user("test@gmail.com","Mr. Test")
-    print(get_all_users())
-
+    

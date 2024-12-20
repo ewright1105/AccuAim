@@ -74,3 +74,12 @@ class TestAccuaim (unittest.TestCase):
         self.assertEqual("test@gmail.com",new_user[1]) #check new user has right email
         self.assertEqual("Test",new_user[2]) #check new user has right name
         
+    def test_get_user_id(self):
+        user_exists_results = get_user_id("bob.white@example.com")
+        user_DNE_results = get_user_id("test@gmail.com")
+        
+        self.assertEqual(4, user_exists_results)
+        self.assertEqual(-1,user_DNE_results)
+        
+    
+        
