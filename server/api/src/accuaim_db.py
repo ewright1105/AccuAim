@@ -120,7 +120,7 @@ def calculate_session_accuracy(session_id):
         session_id (int): The session ID to fetch missed shots for.
 
     Returns:
-        string: formatted string of shooting percentage for the given session.
+        str: formatted string of shooting percentage for the given session.
     """
     num_made_shots = len(get_session_made_shots(session_id))
     total_shots = len(get_session_shots(session_id))
@@ -193,14 +193,65 @@ def remove_shot(user_id, session_id, shot_id):
     # If session_id was not found for the user
     return "Error: The specified session does not belong to the user."
 
-            
-   
+def get_all_users():
+    """
+    retrieves all users from the database
+    
+    Returns:
+        list: a list of tuples containing user details"""
+        
+    sql = """
+    SELECT *
+    FROM users"""
+    
+    results = exec_get_all(sql)
+    
+    return results
+
+def get_user(user_id):
+    """
+    Retrieves a users information using given UserID
+
+    Args:
+        user_id (int): UserID to fetch informaiton for
+        
+    Returns:
+        tuple: tuple containing all information connected to given UserID, if it exists
+    """
+    sql = """
+    SELECT *
+    FROM users
+    WHERE UserID = %s"""
+    
+    result = exec_get_one(sql,(user_id,))
+    
+    return result
+    
+def create_user(email, full_name):
+    """
+    Creates a new user in the users table.
+
+    Args:
+        email (str): The email of the user.
+        full_name (str): The full name of the user.
+
+    Returns:
+        str: Success or error message.
+    """
+    sql = """
+    INSERT INTO users (Email, FullName)
+    VALUES (%s, %s);
+    """
+    try:
+        # Execute the SQL to insert the user
+        exec_commit(sql, (email, full_name))
+        return f"User {full_name} created successfully."
+    except Exception as e:
+        return f"An error occurred while creating the user: {e}"
 
 if __name__ == "__main__":
     rebuild_tables()
-    print(get_session_shots(1))
-    
-    print(remove_shot(1, 1, 3))  # Remove shot with ID 3 from session 1 for user 1
-    
-    print(get_session_shots(1))
+    print(get_all_users())
+    create_user("test@gmail.com","Mr. Test")
+    print(get_all_users())
 

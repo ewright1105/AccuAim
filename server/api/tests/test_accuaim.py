@@ -34,6 +34,7 @@ class TestAccuaim (unittest.TestCase):
         results = calculate_session_accuracy(3)
         self.assertEqual('66.67%',results)
         
+        
     def test_get_user_sessions(self):
         results1 = get_user_sessions(1)
         results2 = get_user_sessions(2)
@@ -46,10 +47,30 @@ class TestAccuaim (unittest.TestCase):
         
     def test_remove_shot(self):
         unmodified_shots = get_session_shots(1)
-        print(unmodified_shots)
         results = remove_shot(1,1,3)
         modified_shots = get_session_shots(1)
         
         self.assertEqual(len(unmodified_shots)-1,len(modified_shots))
         self.assertTrue(all(shot[1] == 1 for shot in modified_shots)) #shot[1] == SessionID, this is making sure the shots returned are from right session
         self.assertEqual("Shot successfully removed.",results)
+        
+    def test_get_all_users(self):
+        results = get_all_users()
+        self.assertEqual(4,len(results))
+        
+    def test_get_user(self):
+        results = get_user(1)
+        self.assertEqual("john.doe@example.com",results[1]) #check new user has right email
+        self.assertEqual("John Doe",results[2]) #check new user has right name
+        
+    def test_create_user(self):
+        unmodified_users = get_all_users()
+        create_user("test@gmail.com","Test")
+        modified_users = get_all_users()
+        
+        new_user = get_user(5) #new user should be index 5
+        
+        self.assertEqual(len(unmodified_users)+1, len(modified_users)) #check if a user was added
+        self.assertEqual("test@gmail.com",new_user[1]) #check new user has right email
+        self.assertEqual("Test",new_user[2]) #check new user has right name
+        
