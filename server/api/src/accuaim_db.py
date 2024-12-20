@@ -17,7 +17,7 @@ def get_user_sessions(user_id):
     sql = """
     SELECT * 
     FROM practice_sessions 
-    WHERE practice_sessions.userid = %s;
+    WHERE practice_sessions.UserID = %s;
     """
     
     result = exec_get_all(sql, (user_id,))
@@ -141,9 +141,9 @@ def reorder_shots(session_id):
     Returns:
         str: Success or error message.
     """
-    # Fetch all shots for the session, ordered by ShotTime or ShotID
+    # Fetch all shots for the session, ordered by ShotID
     sql = """
-    SELECT ShotID FROM shots WHERE SessionID = %s ORDER BY ShotTime;
+    SELECT ShotID FROM shots WHERE SessionID = %s ORDER BY ShotID;
     """
     shots = exec_get_all(sql, (session_id,))
     
