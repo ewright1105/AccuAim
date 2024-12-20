@@ -2,8 +2,8 @@ from flask import jsonify
 from flask_restful import Resource
 from flask_restful import request
 
-from src.accuaim_db import *
-from src.db_utils import *
+from api.accuaim_db import *
+from api.db_utils import *
 
 class Users(Resource):
     def get(self):

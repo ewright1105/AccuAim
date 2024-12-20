@@ -240,10 +240,10 @@ def create_user(email, full_name):
     """
     # Check if a user with the given email already exists
     sql_check = """
-    SELECT 1 FROM users WHERE Email = %s
+    SELECT * FROM users WHERE Email = %s
     """
     
-    user_exists = exec_get_all(sql_check, (email,))
+    user_exists = exec_get_one(sql_check, (email,))
     
     if user_exists:
         return f"Error: An account with the email {email} already exists."
@@ -303,6 +303,65 @@ def get_user_id(user_email):
     if user:
         return user[0]
     return -1
+
+def update_user_email(user_id, new_email):
+    """
+    Updates given users email with a new one
+
+    Args:
+        new_email (str): new email to replace old one
+        
+    Returns:
+        str: Success or Error message
+    """
+    
+    sql = """
+    UPDATE users
+    SET email = %s
+    WHERE UserID = %s"""
+    
+    #check if user exists
+    user = exec_get_one("SELECT * FROM users WHERE UserID = %s", (user_id,))
+    
+    if user:
+        try:
+            # Execute the SQL to insert the user
+            exec_commit(sql, (new_email,user_id,))
+            return f"User email successfully updated to: {new_email}."
+        except Exception as e:
+            return f"An error occurred while creating the user: {e}"
+    else:
+        return "Error: user does not exist"
+    
+def update_user_name(user_id, new_name):
+    """
+    Updates given users name with a new one
+
+    Args:
+        new_name (str): new name to replace old one
+        
+    Returns:
+        str: Success or Error message
+    """
+    sql = """
+    UPDATE users
+    SET FullName = %s
+    WHERE UserID = %s"""
+    
+    #check if user exists
+    user = exec_get_one("SELECT * FROM users WHERE UserID = %s", (user_id,))
+    
+    if user:
+        try:
+            # Execute the SQL to insert the user
+            exec_commit(sql, (new_name,user_id,))
+            return f"User email successfully updated to: {new_name}."
+        except Exception as e:
+            return f"An error occurred while creating the user: {e}"
+    else:
+        return "Error: user does not exist"
+    
+    
     
 if __name__ == "__main__":
     rebuild_tables()

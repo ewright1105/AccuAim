@@ -81,5 +81,23 @@ class TestAccuaim (unittest.TestCase):
         self.assertEqual(4, user_exists_results)
         self.assertEqual(-1,user_DNE_results)
         
+    def test_update_user_email(self):
+        user = get_user(1)
+        update_user_email(1,"test@gmail.com")
+        updated_user = get_user(1)
+        
+        self.assertNotEqual(user[1],updated_user[1])
+        self.assertEqual("test@gmail.com", updated_user[1])
+        
+    def test_update_user_name(self):
+        user = get_user(1)
+        update_user_name(1,"test")
+        updated_user = get_user(1)
+        
+        self.assertNotEqual(user[2],updated_user[2])
+        self.assertEqual("test", updated_user[2])
+        
+        
+        
     
         
