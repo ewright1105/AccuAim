@@ -1,4 +1,5 @@
 from api.db_utils import *
+import re
 
 def rebuild_tables():
     exec_sql_file('accuaim.sql')
@@ -304,66 +305,79 @@ def get_user_id(user_email):
         return user[0]
     return -1
 
-def update_user_email(user_id, new_email):
+def is_valid_email(email):
     """
-    Updates given users email with a new one
-
+    Validates the email format using a regular expression.
+    
     Args:
-        new_email (str): new email to replace old one
+        email (str): The email to validate.
         
     Returns:
-        str: Success or Error message
+        bool: True if valid, False otherwise.
+    """
+    # Simple regex pattern for validating email format
+    email_regex = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+    
+    if re.match(email_regex, email):
+        return True
+    else:
+        return False
+
+def update_user(user_id, new_value, field='email'):
+    """
+    Updates a user's specified field (email or name) with a new value.
+
+    Args:
+        user_id (int): ID of the user to update.
+        new_value (str): The new value for the specified field.
+        field (str): The field to update, either 'email' or 'name'. Defaults to 'email'.
+        
+    Returns:
+        str: Success or Error message.
     """
     
-    sql = """
-    UPDATE users
-    SET email = %s
-    WHERE UserID = %s"""
+    # Validate email format if updating email
+    if field == 'email':
+        if not is_valid_email(new_value):
+            return "Error: Invalid email format."
+        
+        column = 'email'
+        sql = "UPDATE users SET email = %s WHERE UserID = %s"
+        success_message = f"User email successfully updated to: {new_value}."
     
-    #check if user exists
+    # Check if we are updating the name
+    elif field == 'name':
+        column = 'FullName'
+        sql = "UPDATE users SET FullName = %s WHERE UserID = %s"
+        success_message = f"User name successfully updated to: {new_value}."
+    
+    # Handle invalid field
+    else:
+        return "Error: Invalid field specified. Use 'email' or 'name'."
+    
+    # Check if user exists
     user = exec_get_one("SELECT * FROM users WHERE UserID = %s", (user_id,))
     
     if user:
         try:
-            # Execute the SQL to insert the user
-            exec_commit(sql, (new_email,user_id,))
-            return f"User email successfully updated to: {new_email}."
+            # Execute the SQL to update the user
+            exec_commit(sql, (new_value, user_id))
+            return success_message
         except Exception as e:
-            return f"An error occurred while creating the user: {e}"
+            return f"An error occurred while updating the user: {e}"
     else:
         return "Error: user does not exist"
-    
-def update_user_name(user_id, new_name):
-    """
-    Updates given users name with a new one
 
-    Args:
-        new_name (str): new name to replace old one
-        
-    Returns:
-        str: Success or Error message
-    """
-    sql = """
-    UPDATE users
-    SET FullName = %s
-    WHERE UserID = %s"""
-    
-    #check if user exists
-    user = exec_get_one("SELECT * FROM users WHERE UserID = %s", (user_id,))
-    
-    if user:
-        try:
-            # Execute the SQL to insert the user
-            exec_commit(sql, (new_name,user_id,))
-            return f"User email successfully updated to: {new_name}."
-        except Exception as e:
-            return f"An error occurred while creating the user: {e}"
-    else:
-        return "Error: user does not exist"
     
     
     
 if __name__ == "__main__":
     rebuild_tables()
-    print(get_all_users())
+    print(get_user(1))
+    print(update_user(1,"test@gmail.com",'email'))
+    print(get_user(1))
+    print(update_user(1,"test",'email'))
+    print(get_user(1))
+    print(update_user(1,"test",'name'))
+    print(get_user(1))
     

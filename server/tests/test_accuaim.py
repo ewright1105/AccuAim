@@ -82,22 +82,36 @@ class TestAccuaim (unittest.TestCase):
         self.assertEqual(-1,user_DNE_results)
         
     def test_update_user_email(self):
+        # Assuming get_user is a function that fetches user data based on user_id
         user = get_user(1)
-        update_user_email(1,"test@gmail.com")
+        
+        # Test valid email update
+        result = update_user(1, "test@gmail.com", field="email")
         updated_user = get_user(1)
         
-        self.assertNotEqual(user[1],updated_user[1])
-        self.assertEqual("test@gmail.com", updated_user[1])
+        self.assertNotEqual(user[1], updated_user[1])  # Check that the email has been updated
+        self.assertEqual("test@gmail.com", updated_user[1])  # Check that the new email is correct
         
     def test_update_user_name(self):
         user = get_user(1)
-        update_user_name(1,"test")
+        
+        # Test valid name update
+        result = update_user(1, "test", field="name")
         updated_user = get_user(1)
         
-        self.assertNotEqual(user[2],updated_user[2])
-        self.assertEqual("test", updated_user[2])
-        
-        
+        self.assertNotEqual(user[2], updated_user[2])  # Check that the name has been updated
+        self.assertEqual("test", updated_user[2])  # Check that the new name is correct
+    
+    def test_invalid_email_format(self):
+        # Test invalid email format
+        result = update_user(1, "invalid-email", field="email")
+        self.assertEqual(result, "Error: Invalid email format.")  # Ensure the correct error message is returned
+
+    def test_update_user_non_existent(self):
+        # Test updating a non-existent user
+        result = update_user(999, "newemail@example.com", field="email")
+        self.assertEqual(result, "Error: user does not exist")  # Ensure error message is returned for non-existent user
+
         
     
         

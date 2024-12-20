@@ -9,7 +9,7 @@ class Users(Resource):
     def get(self):
         users = get_all_users()
         return jsonify(users)
-    
+
     def post(self):
         data = request.get_json()
         result = create_user(data["email"], data["Full Name"])
