@@ -27,3 +27,17 @@ class TestAccuaim (unittest.TestCase):
     def test_calculate_session_accuracy(self):
         results = calculate_session_accuracy(3)
         self.assertEqual('66.67%',results)
+        
+    def test_get_user_sessions(self):
+        results1 = get_user_sessions(1)
+        results2 = get_user_sessions(2)
+        
+        self.assertEqual(1,len(results1))
+        self.assertEqual(2,len(results2))
+        
+    def test_remove_shot(self):
+        unmodified_shots = get_session_shots(1)
+        results = remove_shot(1,1,3)
+        modified_shots = get_session_shots(1)
+        self.assertEqual(len(unmodified_shots)-1,len(modified_shots))
+        self.assertEqual("Shot successfully removed.",results)
