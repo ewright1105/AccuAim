@@ -5,8 +5,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import unittest
-from api.src.accuaim_db import *
-from api.src.db_utils import *
+from api.accuaim_db import *
+from api.db_utils import *
 
 class TestAccuaim (unittest.TestCase):
     def setUp(self):
