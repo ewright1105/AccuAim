@@ -1,4 +1,4 @@
-from src.db_utils import *
+from api.src.db_utils import *
 
 def rebuild_tables():
     exec_sql_file('accuaim.sql')
