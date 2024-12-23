@@ -341,13 +341,11 @@ def update_user(user_id, new_value, field='email'):
         if not is_valid_email(new_value):
             return "Error: Invalid email format."
         
-        column = 'email'
         sql = "UPDATE users SET email = %s WHERE UserID = %s"
         success_message = f"User email successfully updated to: {new_value}."
     
     # Check if we are updating the name
     elif field == 'name':
-        column = 'FullName'
         sql = "UPDATE users SET FullName = %s WHERE UserID = %s"
         success_message = f"User name successfully updated to: {new_value}."
     

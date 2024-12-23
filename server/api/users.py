@@ -9,10 +9,15 @@ class Users(Resource):
     def get(self):
         users = get_all_users()
         return jsonify(users)
-
+    
+    def put(self):
+        data = request.get_json()
+        result = update_user(data['user_id'], data['new_value'], data['field'])
+        return jsonify(result)
+    
     def post(self):
         data = request.get_json()
-        result = create_user(data["email"], data["Full Name"])
+        result = create_user(data["email"], data["FullName"])
         return jsonify(result)
     
     def delete(self):
