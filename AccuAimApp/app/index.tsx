@@ -2,7 +2,7 @@ import { Text, View, ScrollView } from "react-native";
 import { useEffect, useState } from 'react';
 
 export default function Index() {
-  // Step 1: Define the user type and useState with the correct type for the fetched data
+  // Define the user type and useState with the correct type for the fetched data
   type User = {
     id: number;
     email: string;
@@ -14,11 +14,11 @@ export default function Index() {
 
   useEffect(() => {
     // Fetching data from the API
-    fetch('http://12.0.0.1:4949/')  // Change to the appropriate address for Android Emulator
+    fetch('http://127.0.0.1:4949/')  
       .then(response => response.json())
       .then(data => {
-        console.log(data);  // Log the fetched data for debugging
-        // Step 2: Map the array of arrays into an array of objects
+        
+        // Map the array of arrays into an array of objects
         const usersList = data.map((userData: [number, string, string, string]) => ({
           id: userData[0],
           email: userData[1],
@@ -44,11 +44,12 @@ export default function Index() {
       {/* Step 3: Conditional rendering based on users state */}
       {users ? (
         <ScrollView>
-          {users.map((user) => (
+          {users.map(user => (
             <View key={user.id} style={{ marginBottom: 10 }}>
-              <Text><strong>Name:</strong> {user.name}</Text>
-              <Text><strong>Email:</strong> {user.email}</Text>
-              <Text><strong>Timestamp:</strong> {user.timestamp}</Text>
+              <Text>User {user.id}</Text>
+              <Text>Name: {user.name}</Text>
+              <Text>Email: {user.email}</Text>
+              <Text>Created: {user.timestamp}</Text>
             </View>
           ))}
         </ScrollView>
