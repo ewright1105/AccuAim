@@ -1,5 +1,5 @@
-import { Text, View, ScrollView } from "react-native";
-import { useEffect, useState, useLayoutEffect} from 'react';
+import { Text, View, ScrollView, TextInput, Button } from "react-native";
+import { useEffect, useState, useLayoutEffect } from "react";
 import { useNavigation } from "expo-router";
 
 export default function Index() {
@@ -11,34 +11,66 @@ export default function Index() {
     timestamp: string;
   };
 
-  const [users, setUsers] = useState<User[] | null>(null);  // users will be an array of User objects or null
+  const [users, setUsers] = useState<User[]>([]); 
+  const [newName, setNewName] = useState(""); 
+  const [newEmail, setNewEmail] = useState(""); 
 
+  // Fetch the users list when the component mounts
   useEffect(() => {
-    // Fetching data from the API
-    fetch('http://127.0.0.1:4949/')  
-      .then(response => response.json())
-      .then(data => {
-        
-        // Map the array of arrays into an array of objects
+    fetchUsers();
+  }, []); 
+
+  // Function to fetch users from the API
+  const fetchUsers = () => {
+    fetch("http://127.0.0.1:4949/")
+      .then((response) => response.json())
+      .then((data) => {
         const usersList = data.map((userData: [number, string, string, string]) => ({
           id: userData[0],
           email: userData[1],
           name: userData[2],
           timestamp: userData[3],
         }));
-        setUsers(usersList);  // Update the state with the mapped users data
+        setUsers(usersList); 
       })
-      .catch(error => {
-        console.error('Error fetching users data:', error);
+      .catch((error) => {
+        console.error("Error fetching users data:", error);
       });
-  }, []);
-  const navigation = useNavigation()
-  useLayoutEffect( () => {
+  };
+  const addUser = () => {
+    const name = newName.trim();
+    const email = newEmail.trim();
+    if (name && email) {
+      fetch("http://127.0.0.1:4949/", {
+        method: "POST",
+        body: JSON.stringify({
+          name,
+          email,
+        }),
+        headers: {
+          "Content-type": "application/json; charset=UTF-8",
+        },
+      })
+        .then((response) => response.json())
+        .then(() => {
+          //refresh users list to show new user and reset input fields
+          fetchUsers()
+          setNewName(""); 
+          setNewEmail(""); 
+        })
+        .catch((error) => {
+          console.error("Error adding user:", error);
+        });
+    }
+  };
+
+  const navigation = useNavigation();
+  useLayoutEffect(() => {
     navigation.setOptions({
       title: "User List",
-    })
+    });
   }, [navigation]);
-  
+
   return (
     <View
       style={{
@@ -48,11 +80,42 @@ export default function Index() {
         padding: 20,
       }}
     >
-      {/* Step 3: Conditional rendering based on users state */}
-      {users ? (
+      {/* Input fields for new user */}
+      <TextInput
+        style={{
+          height: 40,
+          borderColor: "gray",
+          borderWidth: 1,
+          marginBottom: 10,
+          width: "100%",
+          paddingHorizontal: 10,
+        }}
+        placeholder="Enter name"
+        value={newName}
+        onChangeText={setNewName}
+      />
+      <TextInput
+        style={{
+          height: 40,
+          borderColor: "gray",
+          borderWidth: 1,
+          marginBottom: 20,
+          width: "100%",
+          paddingHorizontal: 10,
+        }}
+        placeholder="Enter email"
+        value={newEmail}
+        onChangeText={setNewEmail}
+        keyboardType="email-address"
+      />
+
+      <Button title="Add User" onPress={addUser} />
+
+      {/* Conditional rendering based on users state */}
+      {users.length > 0 ? (
         <ScrollView>
-          {users.map(user => (
-            <View key={user.id} style={{ marginBottom: 10 }}>
+          {users.map((user, index) => (
+            <View key={user.id || index+1} style={{ marginBottom: 10 }}>
               <Text>User {user.id}</Text>
               <Text>Name: {user.name}</Text>
               <Text>Email: {user.email}</Text>
@@ -61,7 +124,7 @@ export default function Index() {
           ))}
         </ScrollView>
       ) : (
-        <Text>Loading...</Text>  // Display loading message while data is being fetched
+        <Text>Loading...</Text> // Display loading message while data is being fetched
       )}
     </View>
   );

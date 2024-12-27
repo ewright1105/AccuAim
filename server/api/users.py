@@ -17,7 +17,7 @@ class Users(Resource):
     
     def post(self):
         data = request.get_json()
-        result = create_user(data["email"], data["FullName"])
+        result = create_user(data["email"], data["name"])
         return jsonify(result)
     
     def delete(self):
