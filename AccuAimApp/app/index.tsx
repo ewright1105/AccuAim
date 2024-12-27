@@ -1,5 +1,6 @@
 import { Text, View, ScrollView } from "react-native";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useLayoutEffect} from 'react';
+import { useNavigation } from "expo-router";
 
 export default function Index() {
   // Define the user type and useState with the correct type for the fetched data
@@ -31,7 +32,13 @@ export default function Index() {
         console.error('Error fetching users data:', error);
       });
   }, []);
-
+  const navigation = useNavigation()
+  useLayoutEffect( () => {
+    navigation.setOptions({
+      title: "User List",
+    })
+  }, [navigation]);
+  
   return (
     <View
       style={{
