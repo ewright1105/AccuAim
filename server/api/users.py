@@ -12,7 +12,7 @@ class Users(Resource):
     
     def put(self):
         data = request.get_json()
-        result = update_user(data['user_id'], data['new_value'], data['field'])
+        result = update_user(data['UserID'], data['name'], data['email'])
         return jsonify(result)
     
     def post(self):

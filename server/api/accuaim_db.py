@@ -203,7 +203,8 @@ def get_all_users():
         
     sql = """
     SELECT *
-    FROM users"""
+    FROM users
+    ORDER BY UserID"""
     
     results = exec_get_all(sql)
     
@@ -312,6 +313,7 @@ def get_user_id(user_email):
         return user[0]
     return -1
 
+
 def is_valid_email(email):
     """
     Validates the email format using a regular expression.
@@ -322,56 +324,54 @@ def is_valid_email(email):
     Returns:
         bool: True if valid, False otherwise.
     """
-    # Simple regex pattern for validating email format
-    email_regex = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+    # Improved regex pattern for validating email format
+    email_regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
     
-    if re.match(email_regex, email):
+    # Use re.fullmatch to ensure the entire string matches the pattern
+    if re.fullmatch(email_regex, email):
         return True
     else:
         return False
 
-def update_user(user_id, new_value, field='email'):
+def update_user(user_id, new_name, new_email):
     """
-    Updates a user's specified field (email or name) with a new value.
+    Updates both a user's name and email with new values.
 
     Args:
         user_id (int): ID of the user to update.
-        new_value (str): The new value for the specified field.
-        field (str): The field to update, either 'email' or 'name'. Defaults to 'email'.
+        new_name (str): The user's updated name.
+        new_email (str): The user's updated email.
         
     Returns:
         str: Success or Error message.
     """
     
-    # Validate email format if updating email
-    if field == 'email':
-        if not is_valid_email(new_value):
-            return "Error: Invalid email format."
-        
-        sql = "UPDATE users SET email = %s WHERE UserID = %s"
-        success_message = f"User email successfully updated to: {new_value}."
-    
-    # Check if we are updating the name
-    elif field == 'name':
-        sql = "UPDATE users SET FullName = %s WHERE UserID = %s"
-        success_message = f"User name successfully updated to: {new_value}."
-    
-    # Handle invalid field
-    else:
-        return "Error: Invalid field specified. Use 'email' or 'name'."
+    # Validate email format
+    if not is_valid_email(new_email):
+        return "Error: Invalid email format."
+
+    # Check if the email is already in use by another user
+    existing_user = exec_get_one("SELECT * FROM users WHERE email = %s AND UserID != %s", (new_email, user_id))
+    if existing_user:
+        return "Error: The new email is already in use by another user."
     
     # Check if user exists
     user = exec_get_one("SELECT * FROM users WHERE UserID = %s", (user_id,))
     
     if user:
         try:
-            # Execute the SQL to update the user
-            exec_commit(sql, (new_value, user_id))
-            return success_message
+            # Execute the SQL to update both name and email
+            sql = """
+                UPDATE users 
+                SET FullName = %s, email = %s 
+                WHERE UserID = %s
+            """
+            exec_commit(sql, (new_name, new_email, user_id))
+            return f"User successfully updated: Name = {new_name}, Email = {new_email}."
         except Exception as e:
             return f"An error occurred while updating the user: {e}"
     else:
-        return "Error: user does not exist"
+        return "Error: User does not exist."
 
     
     
