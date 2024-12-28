@@ -210,7 +210,7 @@ def get_all_users():
     
     return results
 
-def get_user(user_id):
+def get_user(UserID):
     """
     Retrieves a users information using given UserID
 
@@ -225,9 +225,11 @@ def get_user(user_id):
     FROM users
     WHERE UserID = %s"""
     
-    result = exec_get_one(sql,(user_id,))
+    result = exec_get_one(sql,(UserID,))
     
-    return result
+    if (result):
+        return result
+    return "User does not exist"
     
 def create_user(email, full_name):
     """

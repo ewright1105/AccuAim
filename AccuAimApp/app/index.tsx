@@ -1,6 +1,6 @@
 import { Text, View, ScrollView, TextInput, Button } from "react-native";
 import { useEffect, useState, useLayoutEffect } from "react";
-import { useNavigation } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
 
 export default function Index() {
 
@@ -17,6 +17,7 @@ export default function Index() {
   const [editUser, setEditUser] = useState<User | null>(null); // User being edited
   const [editedName, setEditedName] = useState(""); // New name for edit
   const [editedEmail, setEditedEmail] = useState(""); // New email for edit
+  const router = useRouter();
 
 
   useEffect(() => {
@@ -66,58 +67,57 @@ export default function Index() {
         });
     }
   };
-  // Function to delete a user
-  const deleteUser = (id: number) => {
-    fetch("http://127.0.0.1:4949/users", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        UserID: id,  
-      }),
+// Function to delete a user
+const deleteUser = (id: number) => {
+  fetch("http://127.0.0.1:4949/users", {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      UserID: id,  
+    }),
+  })
+    .then((response) => response.json())  
+    .then(() => {
+      fetchUsers();  // Refresh the users list after deletion
     })
-      .then((response) => response.json())  
-      .then(() => {
-        fetchUsers();  // Refresh the users list after deletion
+    .catch((error) => {
+      console.error("Error deleting user:", error);
+    });
+};
+
+// Function to update an existing user
+const updateUser = () => {
+  if (editUser) {
+    const name = editedName.trim();
+    const email = editedEmail.trim();
+
+    if (name && email) {
+      fetch("http://127.0.0.1:4949/users", {
+        method: "PUT",
+        body: JSON.stringify({
+          UserID: editUser.id,
+          name,
+          email,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
       })
-      .catch((error) => {
-        console.error("Error deleting user:", error);
-      });
-  };
-
-  // Function to update an existing user
-  const updateUser = () => {
-    if (editUser) {
-      const name = editedName.trim();
-      const email = editedEmail.trim();
-
-      if (name && email) {
-        fetch("http://127.0.0.1:4949/users", {
-          method: "PUT",
-          body: JSON.stringify({
-            UserID: editUser.id,
-            name,
-            email,
-          }),
-          headers: {
-            "Content-Type": "application/json",
-          },
+        .then((response) => response.json())
+        .then(() => {
+          fetchUsers(); // Refresh the users list
+          setEditUser(null); // Clear the editing state
+          setEditedName(""); // Reset input fields
+          setEditedEmail("");
         })
-          .then((response) => response.json())
-          .then(() => {
-            fetchUsers(); // Refresh the users list
-            setEditUser(null); // Clear the editing state
-            setEditedName(""); // Reset input fields
-            setEditedEmail("");
-          })
-          .catch((error) => {
-            console.error("Error updating user:", error);
-          });
-      }
+        .catch((error) => {
+          console.error("Error updating user:", error);
+        });
     }
-  };
-
+  }
+};
   const navigation = useNavigation();
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -209,6 +209,11 @@ export default function Index() {
               <Text>Email: {user.email}</Text>
               <Text>Created: {user.timestamp}</Text>
 
+              
+              <Button title="View Details" onPress={() => {
+                  router.push(`/${user.id}`);
+                }} 
+              />
               {/* Button to set user for editing */}
               <Button title="Edit User" onPress={() => {
                 setEditUser(user);
