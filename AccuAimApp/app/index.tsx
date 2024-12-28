@@ -3,7 +3,7 @@ import { useEffect, useState, useLayoutEffect } from "react";
 import { useNavigation } from "expo-router";
 
 export default function Index() {
-  // Define the user type and useState with the correct type for the fetched data
+
   type User = {
     id: number;
     email: string;
@@ -15,14 +15,13 @@ export default function Index() {
   const [newName, setNewName] = useState(""); 
   const [newEmail, setNewEmail] = useState(""); 
 
-  // Fetch the users list when the component mounts
   useEffect(() => {
     fetchUsers();
   }, []); 
 
   // Function to fetch users from the API
   const fetchUsers = () => {
-    fetch("http://127.0.0.1:4949/")
+    fetch("http://127.0.0.1:4949/users")
       .then((response) => response.json())
       .then((data) => {
         const usersList = data.map((userData: [number, string, string, string]) => ({
@@ -41,7 +40,7 @@ export default function Index() {
     const name = newName.trim();
     const email = newEmail.trim();
     if (name && email) {
-      fetch("http://127.0.0.1:4949/", {
+      fetch("http://127.0.0.1:4949/users", {
         method: "POST",
         body: JSON.stringify({
           name,
@@ -62,6 +61,25 @@ export default function Index() {
           console.error("Error adding user:", error);
         });
     }
+  };
+  // Function to delete a user
+  const deleteUser = (id: number) => {
+    fetch("http://127.0.0.1:4949/users", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        UserID: id,  
+      }),
+    })
+      .then((response) => response.json())  
+      .then(() => {
+        fetchUsers();  // Refresh the users list after deletion
+      })
+      .catch((error) => {
+        console.error("Error deleting user:", error);
+      });
   };
 
   const navigation = useNavigation();
@@ -114,17 +132,19 @@ export default function Index() {
       {/* Conditional rendering based on users state */}
       {users.length > 0 ? (
         <ScrollView>
-          {users.map((user, index) => (
-            <View key={user.id || index+1} style={{ marginBottom: 10 }}>
+          {users.map((user) => (
+            <View key={user.id} style={{ marginBottom: 10 }}>
               <Text>User {user.id}</Text>
               <Text>Name: {user.name}</Text>
               <Text>Email: {user.email}</Text>
               <Text>Created: {user.timestamp}</Text>
+              {/* Delete button for each user */}
+              <Button title="Delete User" onPress={() => deleteUser(user.id)} />
             </View>
           ))}
         </ScrollView>
       ) : (
-        <Text>Loading...</Text> // Display loading message while data is being fetched
+        <Text>No users to display...</Text> // Display loading message while data is being fetched
       )}
     </View>
   );

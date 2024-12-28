@@ -23,5 +23,5 @@ class Users(Resource):
     def delete(self):
         data = request.get_json()
         result = remove_user(data["UserID"])
-        return result
+        return jsonify(result)
         

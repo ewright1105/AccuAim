@@ -270,22 +270,29 @@ def remove_user(user_id):
     Returns:
         str: Success or error message.
     """
-    # First, check if the user exists
+     # First, check if the user exists
     sql_check = "SELECT * FROM users WHERE UserID = %s"
     user_exists = exec_get_one(sql_check, (user_id,))
 
     if not user_exists:
         return "Error: User not found."
 
-    # Delete the user from the users table
-    sql_delete = "DELETE FROM users WHERE UserID = %s"
-    
+    # Delete associated shots
+    sql_delete_shots = "DELETE FROM shots WHERE SessionID IN (SELECT SessionID FROM practice_sessions WHERE UserID = %s)"
+    exec_commit(sql_delete_shots, (user_id,))
+
+    # Delete associated practice sessions
+    sql_delete_sessions = "DELETE FROM practice_sessions WHERE UserID = %s"
+    exec_commit(sql_delete_sessions, (user_id,))
+
+    # Delete user
+    sql_delete_user = "DELETE FROM users WHERE UserID = %s"
     try:
-        exec_commit(sql_delete, (user_id,))
-        return f"User with ID {user_id} removed successfully."
+        exec_commit(sql_delete_user, (user_id,))
+        return f"User with ID {user_id} and all associated records removed successfully."
     except Exception as e:
         return f"An error occurred while removing the user: {e}"
-
+    
 def get_user_id(user_email):
     """ 
     Retrieves the corresponding UserID for the user email provided
