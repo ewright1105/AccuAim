@@ -14,9 +14,6 @@ export default function Index() {
   const [users, setUsers] = useState<User[]>([]); 
   const [newName, setNewName] = useState(""); 
   const [newEmail, setNewEmail] = useState(""); 
-  const [editUser, setEditUser] = useState<User | null>(null); // User being edited
-  const [editedName, setEditedName] = useState(""); // New name for edit
-  const [editedEmail, setEditedEmail] = useState(""); // New email for edit
   const router = useRouter();
 
 
@@ -97,53 +94,6 @@ const deleteUser = (id: number) => {
     });
 };
 
-// Function to update an existing user
-const updateUser = () => {
-  if (editUser) {
-    const name = editedName.trim();
-    const email = editedEmail.trim();
-
-    if (name && email) {
-      fetch("http://127.0.0.1:4949/users", {
-        method: "PUT",
-        body: JSON.stringify({
-          UserID: editUser.id,
-          name,
-          email,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-        .then((response) => response.text()) // Using `.text()` to capture response as plain text
-        .then((data) => {
-        
-          if (data.includes("Error")) {
-            //remove quotations
-            data = data.replace('"',"")
-            data = data.replace('."', '.')
-            Alert.alert("An Error has Occured!",data); // Show the error message from the server
-          } else {
-            fetchUsers(); // Refresh the users list
-            cancelEdit()
-          }
-        })
-        .catch((error) => {
-          console.error("Error adding user:", error);
-          Alert.alert("Error", "Failed to add user. Please try again.");
-        });
-        } else {
-        Alert.alert("Input Error", "Name and email are required.");
-        }
-      };
-    }
-
-    const cancelEdit = () => {
-      setEditUser(null);  // Clear the editUser state to exit editing mode
-      setEditedName("");  // Reset the edited name field
-      setEditedEmail(""); // Reset the edited email field
-    };
-
   const navigation = useNavigation();
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -191,41 +141,6 @@ const updateUser = () => {
 
       <Button title="Add User" onPress={addUser} />
 
-      {/* Update input fields if a user is being edited */}
-      {editUser && (
-        <View style={{ marginVertical: 20 }}>
-          <TextInput
-            style={{
-              height: 40,
-              borderColor: "gray",
-              borderWidth: 1,
-              marginBottom: 10,
-              width: "100%",
-              paddingHorizontal: 10,
-            }}
-            placeholder="Update name"
-            value={editedName}
-            onChangeText={setEditedName}
-          />
-          <TextInput
-            style={{
-              height: 40,
-              borderColor: "gray",
-              borderWidth: 1,
-              marginBottom: 10,
-              width: "100%",
-              paddingHorizontal: 10,
-            }}
-            placeholder="Update email"
-            value={editedEmail}
-            onChangeText={setEditedEmail}
-            keyboardType="email-address"
-          />
-          <Button title="Update User" onPress={updateUser} />
-          <Button title="Cancel" onPress={cancelEdit} color="red" />
-        </View>
-      )}
-
       {/* Conditional rendering based on users state */}
       {users.length > 0 ? (
         <ScrollView>
@@ -241,15 +156,6 @@ const updateUser = () => {
                   router.push(`/${user.id}`);
                 }} 
               />
-              {/* Button to set user for editing */}
-              <Button title="Edit User" onPress={() => {
-                setEditUser(user);
-                setEditedName(user.name);
-                setEditedEmail(user.email);
-              }} />
-              
-              {/* Delete button for each user */}
-              <Button title="Delete User" onPress={() => deleteUser(user.id)} />
             </View>
           ))}
         </ScrollView>
