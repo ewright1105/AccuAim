@@ -242,16 +242,21 @@ def create_user(email, full_name):
     Returns:
         str: Success or error message.
     """
+    # Validate the email format
+    if not is_valid_email(email):
+        return f"Error: The entered email is not in the correct format."
+    
     # Check if a user with the given email already exists
     sql_check = """
-    SELECT * FROM users WHERE Email = %s
+    SELECT * FROM users WHERE LOWER(Email) = LOWER(%s)
     """
     
     user_exists = exec_get_one(sql_check, (email,))
     
     if user_exists:
-        return f"Error: An account with the email {email} already exists."
+        return f"Error: An account with the entered email already exists."
     
+    # If the email format is valid and it doesn't already exist, insert the new user
     sql = """
     INSERT INTO users (Email, FullName)
     VALUES (%s, %s);
@@ -262,6 +267,7 @@ def create_user(email, full_name):
         return f"User {full_name} created successfully."
     except Exception as e:
         return f"An error occurred while creating the user: {e}"
+
     
 def remove_user(user_id):
     """
@@ -335,6 +341,7 @@ def is_valid_email(email):
     else:
         return False
 
+
 def update_user(user_id, new_name, new_email):
     """
     Updates both a user's name and email with new values.
@@ -353,7 +360,7 @@ def update_user(user_id, new_name, new_email):
         return "Error: Invalid email format."
 
     # Check if the email is already in use by another user
-    existing_user = exec_get_one("SELECT * FROM users WHERE email = %s AND UserID != %s", (new_email, user_id))
+    existing_user = exec_get_one("SELECT * FROM users WHERE LOWER(email) = LOWER(%s) AND UserID != %s", (new_email, user_id))
     if existing_user:
         return "Error: The new email is already in use by another user."
     
@@ -380,11 +387,8 @@ def update_user(user_id, new_name, new_email):
     
 if __name__ == "__main__":
     rebuild_tables()
-    print(get_user(1))
-    print(update_user(1,"test@gmail.com",'email'))
-    print(get_user(1))
-    print(update_user(1,"test",'email'))
-    print(get_user(1))
-    print(update_user(1,"test",'name'))
-    print(get_user(1))
-    
+    print(create_user("test@example.com", "John Doe"))
+    print(create_user("invalid-email", "John Doe"))
+    print(create_user("test@example.com", "Jane Doe"))
+
+

@@ -1,4 +1,4 @@
-import { Text, View, ScrollView, TextInput, Button } from "react-native";
+import { Text, View, ScrollView, TextInput, Button, Alert} from "react-native";
 import { useEffect, useState, useLayoutEffect } from "react";
 import { useNavigation, useRouter } from "expo-router";
 
@@ -55,16 +55,26 @@ export default function Index() {
           "Content-type": "application/json; charset=UTF-8",
         },
       })
-        .then((response) => response.json())
-        .then(() => {
-          //refresh users list to show new user and reset input fields
-          fetchUsers()
-          setNewName(""); 
-          setNewEmail(""); 
+        .then((response) => response.text()) // Using `.text()` to capture response as plain text
+        .then((data) => {
+         
+          if (data.includes("Error")) {
+            //remove quotations
+            data = data.replace('"',"")
+            data = data.replace('."', '.')
+            Alert.alert("An Error has Occured!",); // Show the error message from the server
+          } else {
+            fetchUsers();  // Refresh the users list
+            setNewName(""); 
+            setNewEmail(""); 
+          }
         })
         .catch((error) => {
           console.error("Error adding user:", error);
+          Alert.alert("Error", "Failed to add user. Please try again.");
         });
+    } else {
+      Alert.alert("Input Error", "Name and email are required.");
     }
   };
 // Function to delete a user
@@ -105,19 +115,35 @@ const updateUser = () => {
           "Content-Type": "application/json",
         },
       })
-        .then((response) => response.json())
-        .then(() => {
-          fetchUsers(); // Refresh the users list
-          setEditUser(null); // Clear the editing state
-          setEditedName(""); // Reset input fields
-          setEditedEmail("");
+        .then((response) => response.text()) // Using `.text()` to capture response as plain text
+        .then((data) => {
+        
+          if (data.includes("Error")) {
+            //remove quotations
+            data = data.replace('"',"")
+            data = data.replace('."', '.')
+            Alert.alert("An Error has Occured!",data); // Show the error message from the server
+          } else {
+            fetchUsers(); // Refresh the users list
+            cancelEdit()
+          }
         })
         .catch((error) => {
-          console.error("Error updating user:", error);
+          console.error("Error adding user:", error);
+          Alert.alert("Error", "Failed to add user. Please try again.");
         });
+        } else {
+        Alert.alert("Input Error", "Name and email are required.");
+        }
+      };
     }
-  }
-};
+
+    const cancelEdit = () => {
+      setEditUser(null);  // Clear the editUser state to exit editing mode
+      setEditedName("");  // Reset the edited name field
+      setEditedEmail(""); // Reset the edited email field
+    };
+
   const navigation = useNavigation();
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -196,6 +222,7 @@ const updateUser = () => {
             keyboardType="email-address"
           />
           <Button title="Update User" onPress={updateUser} />
+          <Button title="Cancel" onPress={cancelEdit} color="red" />
         </View>
       )}
 

@@ -5,8 +5,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import unittest
-from api.accuaim_db import *
-from api.db_utils import *
+from accuaim_db import *
+from db_utils import *
 
 class TestAccuaim (unittest.TestCase):
     def setUp(self):
@@ -65,53 +65,67 @@ class TestAccuaim (unittest.TestCase):
         
     def test_create_user(self):
         unmodified_users = get_all_users()
-        create_user("test@gmail.com","Test")
+        
+        # Test valid email and user creation
+        create_result = create_user("test@gmail.com", "Test User")
         modified_users = get_all_users()
         
-        new_user = get_user(5) #new user should be index 5
+        self.assertEqual(len(unmodified_users) + 1, len(modified_users))  # Check user was added
+        new_user = get_user(5)  # New user should be index 5
         
-        self.assertEqual(len(unmodified_users)+1, len(modified_users)) #check if a user was added
-        self.assertEqual("test@gmail.com",new_user[1]) #check new user has right email
-        self.assertEqual("Test",new_user[2]) #check new user has right name
+        self.assertEqual("test@gmail.com", new_user[1])  # Check email
+        self.assertEqual("Test User", new_user[2])  # Check name
         
+        # Test duplicate email
+        duplicate_result = create_user("test@gmail.com", "Duplicate User")
+        self.assertEqual(duplicate_result, "Error: An account with the email test@gmail.com already exists.")  # Ensure the correct error message is returned
+
+        # Test invalid email format
+        invalid_email_result = create_user("invalid-email", "Invalid User")
+        self.assertEqual(invalid_email_result, "Error: The email invalid-email is not in a valid format.")  # Check error for invalid email format
+
     def test_get_user_id(self):
         user_exists_results = get_user_id("bob.white@example.com")
         user_DNE_results = get_user_id("test@gmail.com")
         
         self.assertEqual(4, user_exists_results)
         self.assertEqual(-1,user_DNE_results)
-        
+
     def test_update_user_email(self):
         # Assuming get_user is a function that fetches user data based on user_id
         user = get_user(1)
         
         # Test valid email update
-        result = update_user(1, "test@gmail.com", field="email")
+        result = update_user(1, "Updated Name", "updated.email@example.com")
         updated_user = get_user(1)
         
         self.assertNotEqual(user[1], updated_user[1])  # Check that the email has been updated
-        self.assertEqual("test@gmail.com", updated_user[1])  # Check that the new email is correct
+        self.assertEqual("updated.email@example.com", updated_user[1])  # Check that the new email is correct
         
+        # Test invalid email format for update
+        invalid_email_result = update_user(1, "Updated Name", "invalid-email")
+        self.assertEqual(invalid_email_result, "Error: Invalid email format.")  # Check error for invalid email format
+
+        # Test email duplication
+        result = update_user(1, "Updated Name", "bob.white@example.com")  # Assuming this email already exists in the database
+        self.assertEqual(result, "Error: The new email is already in use by another user.")  # Check duplicate email error
+
     def test_update_user_name(self):
         user = get_user(1)
         
         # Test valid name update
-        result = update_user(1, "test", field="name")
+        result = update_user(1, "Updated Name", "updated.email@example.com")
         updated_user = get_user(1)
         
         self.assertNotEqual(user[2], updated_user[2])  # Check that the name has been updated
-        self.assertEqual("test", updated_user[2])  # Check that the new name is correct
+        self.assertEqual("Updated Name", updated_user[2])  # Check that the new name is correct
     
     def test_invalid_email_format(self):
-        # Test invalid email format
-        result = update_user(1, "invalid-email", field="email")
-        self.assertEqual(result, "Error: Invalid email format.")  # Ensure the correct error message is returned
+        # Test invalid email format for update
+        result = update_user(1, "Updated Name", "invalid-email")
+        self.assertEqual(result, "Error: Invalid email format.")  # Ensure correct error message is returned
 
     def test_update_user_non_existent(self):
         # Test updating a non-existent user
-        result = update_user(999, "newemail@example.com", field="email")
-        self.assertEqual(result, "Error: user does not exist")  # Ensure error message is returned for non-existent user
-
-        
-    
-        
+        result = update_user(999, "newemail@example.com", "new.email@example.com")
+        self.assertEqual(result, "Error: User does not exist.")  # Ensure error message is returned for non-existent user
