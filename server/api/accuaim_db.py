@@ -381,6 +381,32 @@ def update_user(user_id, new_name, new_email):
             return f"An error occurred while updating the user: {e}"
     else:
         return "Error: User does not exist."
+    
+def get_user_by_email(email):
+    """
+    Retrieves a user's information by their email.
+
+    Args:
+        email (str): The email to fetch user information for.
+
+    Returns:
+        dict: A dictionary containing user information if the user exists, otherwise None.
+    """
+    # Query to fetch the user by email
+    sql = """
+    SELECT UserID, FullName, Email
+    FROM users
+    WHERE LOWER(Email) = LOWER(%s);
+    """
+    
+    user = exec_get_one(sql, (email,))
+    
+    if user:
+        # Return a dictionary with the user's details
+        return {"id": user[0], "name": user[1], "email": user[2]}
+    
+    return None  # Return None if no user is found
+
 
     
     

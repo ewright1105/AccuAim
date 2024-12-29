@@ -110,9 +110,38 @@ const deleteUser = (id: number) => {
         padding: 20,
       }}
     >
-      <Button title="Login" onPress={()=> {router.push("/Login")}} />
-      <Button title="Sign Up" onPress={()=> {router.push("/SignUp")}} />
-      {/* Conditional rendering based on users state 
+      {/* Input fields for new user */}
+      <TextInput
+        style={{
+          height: 40,
+          borderColor: "gray",
+          borderWidth: 1,
+          marginBottom: 10,
+          width: "100%",
+          paddingHorizontal: 10,
+        }}
+        placeholder="Enter name"
+        value={newName}
+        onChangeText={setNewName}
+      />
+      <TextInput
+        style={{
+          height: 40,
+          borderColor: "gray",
+          borderWidth: 1,
+          marginBottom: 20,
+          width: "100%",
+          paddingHorizontal: 10,
+        }}
+        placeholder="Enter email"
+        value={newEmail}
+        onChangeText={setNewEmail}
+        keyboardType="email-address"
+      />
+
+      <Button title="Add User" onPress={addUser} />
+
+      {/* Conditional rendering based on users state */}
       {users.length > 0 ? (
         <ScrollView>
           {users.map((user) => (
@@ -132,7 +161,7 @@ const deleteUser = (id: number) => {
         </ScrollView>
       ) : (
         <Text>No users to display...</Text> 
-      )} */}
+      )}
     </View>
   );
 }
