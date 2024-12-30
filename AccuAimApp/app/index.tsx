@@ -12,8 +12,6 @@ export default function Index() {
   };
 
   const [users, setUsers] = useState<User[]>([]); 
-  const [newName, setNewName] = useState(""); 
-  const [newEmail, setNewEmail] = useState(""); 
   const router = useRouter();
 
 
@@ -38,66 +36,12 @@ export default function Index() {
         console.error("Error fetching users data:", error);
       });
   };
-  const addUser = () => {
-    const name = newName.trim();
-    const email = newEmail.trim();
-    if (name && email) {
-      fetch("http://127.0.0.1:4949/users", {
-        method: "POST",
-        body: JSON.stringify({
-          name,
-          email,
-        }),
-        headers: {
-          "Content-type": "application/json; charset=UTF-8",
-        },
-      })
-        .then((response) => response.text()) // Using `.text()` to capture response as plain text
-        .then((data) => {
-         
-          if (data.includes("Error")) {
-            //remove quotations
-            data = data.replace('"',"")
-            data = data.replace('."', '.')
-            Alert.alert("An Error has Occured!",); // Show the error message from the server
-          } else {
-            fetchUsers();  // Refresh the users list
-            setNewName(""); 
-            setNewEmail(""); 
-          }
-        })
-        .catch((error) => {
-          console.error("Error adding user:", error);
-          Alert.alert("Error", "Failed to add user. Please try again.");
-        });
-    } else {
-      Alert.alert("Input Error", "Name and email are required.");
-    }
-  };
-// Function to delete a user
-const deleteUser = (id: number) => {
-  fetch("http://127.0.0.1:4949/users", {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      UserID: id,  
-    }),
-  })
-    .then((response) => response.json())  
-    .then(() => {
-      fetchUsers();  // Refresh the users list after deletion
-    })
-    .catch((error) => {
-      console.error("Error deleting user:", error);
-    });
-};
+ 
 
   const navigation = useNavigation();
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: "User List",
+      title: "AccuAim",
     });
   }, [navigation]);
 

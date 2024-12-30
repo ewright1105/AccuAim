@@ -11,15 +11,18 @@ class Login(Resource):
         email = data.get("email")
         
         if not email:
-            return jsonify({"message": "Email is required"}), 400
+            return jsonify({"message": "Email is required"})
         
         # Assuming you have a function `get_user_by_email` that checks if a user exists by email
         
         user = get_user_by_email(email)
-        
-        if user:
+        print("User: %s", user)
+        if user != None:
             # If user exists, return user info (you can also return user ID here)
+            print("user found")
             return jsonify({"id": user["id"], "name": user["name"], "email": user["email"]})
         else:
             # If user does not exist, return an error message
-            return jsonify({"message": "User not found"}), 404
+            print("user not found")
+            return jsonify({"message": "User not found"})
+        
