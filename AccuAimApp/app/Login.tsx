@@ -1,10 +1,24 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useLayoutEffect, useState } from 'react';
+import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity } from 'react-native';
+import { useNavigation, useRouter } from 'expo-router';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const router = useRouter();
+  const navigation = useNavigation();
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: "AccuAim",
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ marginLeft: 15 }}
+        >
+           <Text style={{ color: "#F1C40F", fontSize: 26 }}>←</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   const handleLogin = () => {
     const trimmedEmail = email.trim();
@@ -14,7 +28,6 @@ const Login = () => {
       return;
     }
 
-    console.log("Attempting login...");
     fetch('http://127.0.0.1:4949/users/login', {
       method: 'POST',
       body: JSON.stringify({ email: trimmedEmail }),
@@ -31,8 +44,6 @@ const Login = () => {
             Alert.alert("Error", "User not found or invalid credentials.");
           } else if (parsedData.id) {
             // If the response contains user data, navigate to the user's profile
-            console.log("Server response:", parsedData);
-            console.log("Attempting navigation to:", `/${parsedData.id}`);
             router.push(`/${parsedData.id}`);
           } else {
             // Handle any other unexpected responses
@@ -59,9 +70,10 @@ const Login = () => {
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
+        placeholderTextColor="#F1C40F" 
       />
 
-      <Button title="Login" onPress={handleLogin} />
+      <Button title="Login" onPress={handleLogin} color="#F1C40F" />
     </View>
   );
 };
@@ -72,18 +84,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#121212', 
   },
   header: {
-    fontSize: 24,
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#F1C40F',
     marginBottom: 20,
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
+    height: 45,
+    borderColor: '#F1C40F', 
     borderWidth: 1,
     marginBottom: 15,
     width: '100%',
     paddingHorizontal: 10,
+    color: '#F1C40F', 
   },
 });
 

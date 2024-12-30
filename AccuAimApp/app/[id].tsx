@@ -1,4 +1,4 @@
-import { Text, View, ScrollView, Button, TextInput, Alert } from "react-native";
+import { Text, View, ScrollView, Button, TextInput, Alert, StyleSheet } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 
@@ -142,78 +142,127 @@ const deleteUser = (id: number) => {
   }
 
   return (
-    <ScrollView style={{ padding: 20 }}>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>
-        User Details
-      </Text>
+    <ScrollView style={styles.container}>
+      <Text style={styles.header}>User Details</Text>
       {user && (
         <View>
-          <View style={{ marginBottom: 15 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>ID:</Text>
-            <Text style={{ fontSize: 16 }}>{user.id}</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>ID:</Text>
+            <Text style={styles.detailText}>{user.id}</Text>
           </View>
 
-          <View style={{ marginBottom: 15 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Name:</Text>
-            <Text style={{ fontSize: 16 }}>{user.name}</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Name:</Text>
+            <Text style={styles.detailText}>{user.name}</Text>
           </View>
 
-          <View style={{ marginBottom: 15 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Email:</Text>
-            <Text style={{ fontSize: 16 }}>{user.email}</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Email:</Text>
+            <Text style={styles.detailText}>{user.email}</Text>
           </View>
 
-          <View style={{ marginBottom: 15 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Created:</Text>
-            <Text style={{ fontSize: 16 }}>{user.timestamp}</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Created:</Text>
+            <Text style={styles.detailText}>{user.timestamp}</Text>
           </View>
-          {/* Update input fields if a user is being edited */}
-      {editUser && (
-        <View style={{ marginVertical: 20 }}>
-          <TextInput
-            style={{
-              height: 40,
-              borderColor: "gray",
-              borderWidth: 1,
-              marginBottom: 10,
-              width: "100%",
-              paddingHorizontal: 10,
-            }}
-            placeholder="Update name"
-            value={editedName}
-            onChangeText={setEditedName}
-          />
-          <TextInput
-            style={{
-              height: 40,
-              borderColor: "gray",
-              borderWidth: 1,
-              marginBottom: 10,
-              width: "100%",
-              paddingHorizontal: 10,
-            }}
-            placeholder="Update email"
-            value={editedEmail}
-            onChangeText={setEditedEmail}
-            keyboardType="email-address"
-          />
-          <Button title="Update User" onPress={updateUser} />
-          <Button title="Cancel" onPress={cancelEdit} color="red" />
+
+          {/* Editing user details */}
+          {editUser && (
+            <View style={styles.editContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Update name"
+                value={editedName}
+                onChangeText={setEditedName}
+                placeholderTextColor="#F1C40F" // Light yellow placeholder
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Update email"
+                value={editedEmail}
+                onChangeText={setEditedEmail}
+                keyboardType="email-address"
+                placeholderTextColor="#F1C40F" // Light yellow placeholder
+              />
+              <Button title="Update User" onPress={updateUser} color="#F1C40F" />
+              <Button title="Cancel" onPress={cancelEdit} color="red" />
+            </View>
+          )}
+
+          {/* Buttons to Edit or Delete */}
+          {!editUser && (
+            <>
+              <Button
+                title="Edit User"
+                onPress={() => {
+                  setEditUser(user);
+                  setEditedName(user.name);
+                  setEditedEmail(user.email);
+                }}
+                color="#F1C40F" // Yellow color for button
+              />
+              <Button
+                title="Delete User"
+                onPress={() => deleteUser(user.id)}
+                color="red" // Red color for delete
+              />
+            </>
+          )}
         </View>
       )}
-            {/* Button to set user for editing */}
-            <Button title="Edit User" onPress={() => {
-                setEditUser(user);
-                setEditedName(user.name);
-                setEditedEmail(user.email);
-              }} />
-              
-              {/* Delete button for each user */}
-              <Button title="Delete User" onPress={() => deleteUser(user.id)} />
-        </View>
-      )}
 
-      <Button title="Go Back" onPress={() => router.back()} />
+      <Button title="Sign Out" onPress={() => router.push('/')} color="#F1C40F" />
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: "#121212",
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#F1C40F", 
+    marginBottom: 20,
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    fontSize: 18,
+    color: "#F1C40F", 
+  },
+  errorText: {
+    fontSize: 18,
+    color: "red",
+  },
+  detailRow: {
+    marginBottom: 15,
+  },
+  detailLabel: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#F1C40F", 
+  },
+  detailText: {
+    fontSize: 16,
+    color: "#F1C40F", 
+  },
+  editContainer: {
+    marginVertical: 20,
+  },
+  input: {
+    height: 40,
+    borderColor: "#F1C40F", 
+    borderWidth: 1,
+    marginBottom: 10,
+    width: "100%",
+    paddingHorizontal: 10,
+    color: "#F1C40F", 
+  },
+});

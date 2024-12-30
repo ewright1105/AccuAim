@@ -1,13 +1,27 @@
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import { View, Text, Button, Alert, TextInput, StyleSheet } from "react-native";
+import { useNavigation, useRouter } from "expo-router";
+import React, { useLayoutEffect, useState } from "react";
+import { View, Text, Button, Alert, TextInput, StyleSheet, TouchableOpacity } from "react-native";
 
 export default function SignUp() {
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newUserId, setNewUserId] = useState(null);
   const router = useRouter();
-
+  const navigation = useNavigation();
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: "AccuAim",
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ marginLeft: 15 }}
+        >
+          <Text style={{ color: "#F1C40F", fontSize: 26 }}>←</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+  
   type User = {
     id: number;
     email: string;
@@ -58,7 +72,6 @@ export default function SignUp() {
     }
 
     try {
-      console.log("Attempting to add user...");
       const response = await fetch("http://127.0.0.1:4949/users", {
         method: "POST",
         body: JSON.stringify({ name, email }),
@@ -68,7 +81,6 @@ export default function SignUp() {
       });
 
       const data = await response.text(); // Get the response as plain text to handle errors from the server
-      console.log("Server response:", data); // Log the full response
 
       // Check for errors in the response
       if (data.includes("Error")) {
@@ -94,36 +106,44 @@ export default function SignUp() {
   return (
     <View style={styles.container}>
       <TextInput
-        style={styles.input}
-        placeholder="Enter name"
-        value={newName}
-        onChangeText={setNewName}
+      style={styles.input}
+      placeholder="Enter name"
+      placeholderTextColor="#F1C40F"
+      value={newName}
+      onChangeText={setNewName}
       />
       <TextInput
         style={styles.input}
-        placeholder="Enter email"
+        placeholder="Enter email" 
+        placeholderTextColor="#F1C40F"
         value={newEmail}
         onChangeText={setNewEmail}
         keyboardType="email-address"
       />
-      <Button title="Add User" onPress={addUser} />
+      <Button 
+        title="Add User"
+        onPress={addUser}
+        color="#F1C40F"
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     padding: 20,
     justifyContent: "center",
     alignItems: "center",
-    flex: 1,
+    backgroundColor: "#121212", 
   },
   input: {
     height: 40,
-    borderColor: "gray",
+    borderColor: "#F1C40F", 
     borderWidth: 1,
     marginBottom: 10,
     width: "100%",
     paddingHorizontal: 10,
+    color: "#F1C40F", 
   },
 });

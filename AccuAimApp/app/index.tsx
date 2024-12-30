@@ -1,43 +1,9 @@
-import { Text, View, ScrollView, TextInput, Button, Alert} from "react-native";
-import { useEffect, useState, useLayoutEffect } from "react";
+import { Text, View, Button, StyleSheet, TouchableOpacity } from "react-native";
+import { useLayoutEffect } from "react";
 import { useNavigation, useRouter } from "expo-router";
 
 export default function Index() {
-
-  type User = {
-    id: number;
-    email: string;
-    name: string;
-    timestamp: string;
-  };
-
-  const [users, setUsers] = useState<User[]>([]); 
   const router = useRouter();
-
-
-  useEffect(() => {
-    fetchUsers();
-  }, []); 
-
-  // Function to fetch users from the API
-  const fetchUsers = () => {
-    fetch("http://127.0.0.1:4949/users")
-      .then((response) => response.json())
-      .then((data) => {
-        const usersList = data.map((userData: [number, string, string, string]) => ({
-          id: userData[0],
-          email: userData[1],
-          name: userData[2],
-          timestamp: userData[3],
-        }));
-        setUsers(usersList); 
-      })
-      .catch((error) => {
-        console.error("Error fetching users data:", error);
-      });
-  };
- 
-
   const navigation = useNavigation();
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -46,37 +12,67 @@ export default function Index() {
   }, [navigation]);
 
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 20,
-      }}
-    >
-      <Button title="Login" onPress={()=> {router.push("/Login")}} />
-      <Button title="Sign Up" onPress={()=> {router.push("/SignUp")}} />
-      {/* Conditional rendering based on users state 
-      {users.length > 0 ? (
-        <ScrollView>
-          {users.map((user) => (
-            <View key={user.id} style={{ marginBottom: 10 }}>
-              <Text>User {user.id}</Text>
-              <Text>Name: {user.name}</Text>
-              <Text>Email: {user.email}</Text>
-              <Text>Created: {user.timestamp}</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Welcome to AccuAim</Text>
+      <Text style={styles.subtitle}>Please log in or sign up to get started</Text>
 
-              
-              <Button title="View Details" onPress={() => {
-                  router.push(`/${user.id}`);
-                }} 
-              />
-            </View>
-          ))}
-        </ScrollView>
-      ) : (
-        <Text>No users to display...</Text> 
-      )} */}
+      {/* Login Button */}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => {
+          router.push("/Login");
+        }}
+      >
+        <Text style={styles.buttonText}>Login</Text>
+      </TouchableOpacity>
+
+      {/* Sign Up Button */}
+      <TouchableOpacity
+        style={[styles.button, styles.signUpButton]}
+        onPress={() => {
+          router.push("/SignUp");
+        }}
+      >
+        <Text style={styles.buttonText}>Sign Up</Text>
+      </TouchableOpacity>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#121212", 
+    paddingHorizontal: 20,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    marginBottom: 20,
+    color: "#F1C40F", 
+  },
+  subtitle: {
+    fontSize: 18,
+    marginBottom: 40,
+    color: "#B0B0B0", 
+  },
+  button: {
+    backgroundColor: "#F1C40F", 
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    marginBottom: 20,
+    width: "80%",
+    alignItems: "center",
+  },
+  signUpButton: {
+    backgroundColor: "#FFC107", 
+  },
+  buttonText: {
+    color: "#121212",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+});
