@@ -5,7 +5,8 @@ export default function RootLayout() {
   return (
     <Stack
       screenOptions={{
-        headerBackVisible: false, // This specifically hides the back button during navigation
+        headerBackVisible: false,
+        animation: 'none',
         headerStyle: {
           backgroundColor: "#121212",
           ...Platform.select({

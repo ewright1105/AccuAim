@@ -201,6 +201,7 @@ const deleteUser = (id: number) => {
                 }}
                 color="#F1C40F" // Yellow color for button
               />
+              <Button title="Sign Out" onPress={() => router.push('/')} color="#F1C40F" />
               <Button
                 title="Delete User"
                 onPress={() => deleteUser(user.id)}
@@ -211,7 +212,7 @@ const deleteUser = (id: number) => {
         </View>
       )}
 
-      <Button title="Sign Out" onPress={() => router.push('/')} color="#F1C40F" />
+      
     </ScrollView>
   );
 }

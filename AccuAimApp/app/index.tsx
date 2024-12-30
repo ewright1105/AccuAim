@@ -1,4 +1,4 @@
-import { Text, View, Button, StyleSheet, TouchableOpacity } from "react-native";
+import { Text, View, Button, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { useLayoutEffect } from "react";
 import { useNavigation, useRouter } from "expo-router";
 
@@ -13,6 +13,11 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
+      <Image
+        source={require("/Users/evanwright/personal projects/AccuAim/AccuAimApp/assets/images/Screenshot 2024-12-30 at 6.45.08 PM.png")} // Adjust this path to match your logo file location
+        style={styles.logo}
+        resizeMode="contain"
+      />
       <Text style={styles.title}>Welcome to AccuAim</Text>
       <Text style={styles.subtitle}>Please log in or sign up to get started</Text>
 
@@ -46,6 +51,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#121212", 
     paddingHorizontal: 20,
+  },
+  logo: {
+    width: 200,
+    height: 200,
+    marginBottom: 20,
   },
   title: {
     fontSize: 32,
