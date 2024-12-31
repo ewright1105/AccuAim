@@ -4,17 +4,19 @@ from flask_cors import CORS
 
 from api.db_utils import *
 from api.accuaim_db import *
-from api.users import *
-from api.user import *
-from api.login import *
+from api.resources.users import *
+from api.resources.user import *
+from api.resources.login import *
+from api.resources.user_sessions import *
 
 app = Flask(__name__)
 CORS(app)
 api = Api(app)
 
-api.add_resource(Users, '/users')
-api.add_resource(User, '/users/<int:UserID>')
-api.add_resource(Login, '/users/login')
+api.add_resource(Users, '/')
+api.add_resource(User, '/user/<int:UserID>')
+api.add_resource(Login, '/user/login')
+api.add_resource(UserSessions, '/user/<int:UserID>/sessions')
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ const RootLayout: React.FC = () => {
       <Stack
       screenOptions={{
         headerBackVisible: false,
-        animation: 'none',
+        animation: 'fade',
         headerStyle: {
           backgroundColor: "#121212",
           ...Platform.select({

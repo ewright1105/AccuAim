@@ -50,11 +50,7 @@ const LandingScreen: React.FC = () => {
             <>
             {/* Display the user's name in the welcome message */}
             <Text style={styles.title}>Welcome, {user.name}!</Text>
-            <Button
-                title="Start Workout"
-                onPress={() => router.push('/WorkoutScreen')} // Navigate to workout screen
-                color="#F1C40F"
-            />
+            <Button title="Your Sessions" onPress={() => router.push('/UserSessions')} color="#F1C40F" />
             </>
         ) : (
             <Text style={styles.subtitle}>You need to be logged in to view this page.</Text>

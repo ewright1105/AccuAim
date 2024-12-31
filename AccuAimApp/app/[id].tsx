@@ -1,6 +1,7 @@
 import { Text, View, ScrollView, Button, TextInput, Alert, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useEffect, useLayoutEffect, useState } from "react";
+import React from "react";
 
 export default function UserDetails() {
 
@@ -48,7 +49,7 @@ export default function UserDetails() {
 
   const fetchUserDetails = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:4949/users/${id}`);
+      const response = await fetch(`http://127.0.0.1:4949/user/${id}`);
       const data = await response.json();
 
       // Now handle the API response correctly
