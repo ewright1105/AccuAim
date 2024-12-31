@@ -16,7 +16,7 @@ const LandingScreen: React.FC = () => {
             headerRight: () => (
                 // Conditionally render the settings icon only if 'user' is not null
                 user ? (
-                <TouchableOpacity onPress={() => router.push(`/${user.id}`)}>
+                <TouchableOpacity onPress={() => router.push(`/user/${user.id}`)}>
                     <Ionicons name="settings-outline" size={28} color="#F1C40F" />
                 </TouchableOpacity>
                 ) : null

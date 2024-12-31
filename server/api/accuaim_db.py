@@ -407,6 +407,57 @@ def get_user_by_email(email):
     
     return None  # Return None if no user is found
 
+def get_session_data(user_id, session_id):
+    """
+    Retrieves important session data: made shots, missed shots, shooting percentage, and total shots taken.
+    Ensures that the session belongs to the given user.
+
+    Args:
+        user_id (int): The user ID to check ownership.
+        session_id (int): The session ID to fetch data for.
+    
+    Returns:
+        dict: A dictionary containing session data (made shots, missed shots, etc.) if valid, 
+              otherwise a message indicating no access or invalid session.
+    """
+    # Check if the session belongs to the user
+    sql = """
+    SELECT * FROM practice_sessions 
+    WHERE SessionID = %s AND UserID = %s;
+    """
+    session_exists = exec_get_one(sql, (session_id, user_id))
+    
+    if not session_exists:
+        # If session doesn't belong to the user, return an error message
+        return {"error": "This session does not belong to the user or does not exist."}
+    
+    # Get all shots for the session
+    all_shots = get_session_shots(session_id)
+    made_shots = get_session_made_shots(session_id)
+    missed_shots = get_session_missed_shots(session_id)
+    
+    total_shots = len(all_shots)
+    made_shots_count = len(made_shots)
+    missed_shots_count = len(missed_shots)
+    
+    # Calculate shooting percentage (handle division by zero)
+    if total_shots == 0:
+        shooting_percentage = 0.0
+    else:
+        shooting_percentage = (made_shots_count / total_shots) * 100
+    
+    # Prepare the response as a dictionary, ordering the keys as per your requirement
+    session_data = {
+        'user_id': user_id,
+        'session_id': session_id,
+        'made_shots': made_shots_count,
+        'missed_shots': missed_shots_count,
+        'total_shots': total_shots,
+        'shooting_percentage': f"{shooting_percentage:.2f}%",
+    }
+    
+    return session_data
+
 
     
     

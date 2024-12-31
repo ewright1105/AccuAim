@@ -8,6 +8,7 @@ from api.resources.users import *
 from api.resources.user import *
 from api.resources.login import *
 from api.resources.user_sessions import *
+from api.resources.session_details import *
 
 app = Flask(__name__)
 CORS(app)
@@ -17,6 +18,7 @@ api.add_resource(Users, '/')
 api.add_resource(User, '/user/<int:UserID>')
 api.add_resource(Login, '/user/login')
 api.add_resource(UserSessions, '/user/<int:UserID>/sessions')
+api.add_resource(SessionDetails, '/user/<int:UserID>/sessions/<int:SessionID>')
 
 
 if __name__ == "__main__":

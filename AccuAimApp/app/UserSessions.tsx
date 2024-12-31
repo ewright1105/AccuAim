@@ -114,7 +114,7 @@ export default function UserSessions() {
           <Text style={styles.sessionText}>
             Duration: {calculateDuration(session.startTime, session.endTime)}
           </Text>
-          <Button title="View Details" onPress={() => Alert.alert("need to implement code for viewing a session")} color="#F1C40F"/>
+          <Button title="View Details" onPress={() => router.push(`/${session.sessionId}`)} color="#F1C40F"/>
         </View>
       ))}
     </ScrollView>
