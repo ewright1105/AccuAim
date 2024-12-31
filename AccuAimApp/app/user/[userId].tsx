@@ -11,7 +11,7 @@ export default function UserDetails() {
     name: string;
     timestamp: string;
   };
-  const { id } = useLocalSearchParams(); // Retrieve the user ID from the route parameters
+  const { userId } = useLocalSearchParams(); // Retrieve the user ID from the route parameters
   const router = useRouter();
   const [user, setUser] = useState<{
     id: number;
@@ -38,18 +38,18 @@ export default function UserDetails() {
   }, [navigation]);
   
   useEffect(() => {
-    if (id) {
-      fetchUserDetails();
+    if (userId) {
+      fetchUserDetails(userId);
     }
-  }, [id]);
+  }, [userId]);
 
   const [editUser, setEditUser] = useState<User | null>(null); // User being edited
   const [editedName, setEditedName] = useState(""); // New name for edit
   const [editedEmail, setEditedEmail] = useState(""); // New email for edit
 
-  const fetchUserDetails = async () => {
+  const fetchUserDetails = async (userId: String | String[]) => {
     try {
-      const response = await fetch(`http://127.0.0.1:4949/user/${id}`);
+      const response = await fetch(`http://127.0.0.1:4949/user/${userId}`);
       const data = await response.json();
 
       // Now handle the API response correctly
@@ -84,7 +84,7 @@ const updateUser = () => {
     const email = editedEmail.trim();
 
     if (name && email) {
-      fetch("http://127.0.0.1:4949/users", {
+      fetch("http://127.0.0.1:4949/", {
         method: "PUT",
         body: JSON.stringify({
           UserID: editUser.id,
@@ -104,7 +104,7 @@ const updateUser = () => {
             data = data.replace('."', '.')
             Alert.alert("An Error has Occured!",data); // Show the error message from the server
           } else {
-            fetchUserDetails(); // Refresh the users list
+            fetchUserDetails(userId); // Refresh the users list
             cancelEdit()
           }
         })
@@ -120,7 +120,7 @@ const updateUser = () => {
 
     // Function to delete a user
 const deleteUser = (id: number) => {
-  fetch("http://127.0.0.1:4949/users", {
+  fetch("http://127.0.0.1:4949/", {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json"

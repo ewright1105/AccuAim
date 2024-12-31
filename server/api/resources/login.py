@@ -19,10 +19,8 @@ class Login(Resource):
         print("User: %s", user)
         if user != None:
             # If user exists, return user info (you can also return user ID here)
-            print("user found")
             return jsonify({"id": user["id"], "name": user["name"], "email": user["email"]})
         else:
             # If user does not exist, return an error message
-            print("user not found")
             return jsonify({"message": "User not found"})
         

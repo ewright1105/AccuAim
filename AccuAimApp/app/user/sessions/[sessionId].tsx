@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect } from "react";
 import { View, Text, Button, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useAuth } from './AuthContext';
+import { useAuth } from '../../AuthContext';
 
 interface SessionDetailsData {
   user_id: number;
