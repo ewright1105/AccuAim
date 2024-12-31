@@ -1,6 +1,6 @@
-import { Text, View, ScrollView, Button, TextInput, Alert, StyleSheet } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { Text, View, ScrollView, Button, TextInput, Alert, StyleSheet, TouchableOpacity } from "react-native";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { useEffect, useLayoutEffect, useState } from "react";
 
 export default function UserDetails() {
 
@@ -20,7 +20,22 @@ export default function UserDetails() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigation = useNavigation();
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: "Settings",
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ marginLeft: 15 }}
+        >
+           <Text style={{ color: "#F1C40F", fontSize: 26 }}>←</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+  
   useEffect(() => {
     if (id) {
       fetchUserDetails();
@@ -114,8 +129,15 @@ const deleteUser = (id: number) => {
     }),
   })
     .then((response) => response.json())  
-    .then(() => {
-      router.back()  // Refresh the users list after deletion
+    .then(data => {
+      data.trim('"','')
+      data.trim('."', '')
+      if(data.includes('Error')){
+        Alert.alert("Error Deleting User", data)
+      }
+      else{
+        router.push('/') 
+      }
     })
     .catch((error) => {
       console.error("Error deleting user:", error);

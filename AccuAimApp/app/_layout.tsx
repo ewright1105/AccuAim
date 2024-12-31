@@ -1,9 +1,13 @@
-import { Platform } from "react-native";
-import { Stack } from "expo-router";
+import React from 'react';
+import { Platform } from 'react-native';
+import { Stack } from 'expo-router';
+import { AuthProvider } from './AuthContext'; // Import the AuthProvider
 
-export default function RootLayout() {
+const RootLayout: React.FC = () => {
   return (
-    <Stack
+    // Wrap the entire app with AuthProvider
+    <AuthProvider>
+      <Stack
       screenOptions={{
         headerBackVisible: false,
         animation: 'none',
@@ -29,5 +33,8 @@ export default function RootLayout() {
         },
       }}
     />
+    </AuthProvider>
   );
-}
+};
+
+export default RootLayout;

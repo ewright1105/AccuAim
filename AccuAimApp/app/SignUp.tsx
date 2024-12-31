@@ -92,7 +92,7 @@ export default function SignUp() {
         const userId = await updateNewUserId(); // Fetch the new user ID
 
         if (userId) {
-          router.push(`/${userId}`); // Navigate to the new user's page using the retrieved user ID
+          router.push(`/Login`); // Navigate to the new user's page using the retrieved user ID
         } else {
           Alert.alert("Error", "Failed to retrieve user ID.");
         }
