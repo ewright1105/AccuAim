@@ -78,11 +78,11 @@ class TestAccuaim (unittest.TestCase):
         
         # Test duplicate email
         duplicate_result = create_user("test@gmail.com", "Duplicate User")
-        self.assertEqual(duplicate_result, "Error: An account with the email test@gmail.com already exists.")  # Ensure the correct error message is returned
+        self.assertEqual(duplicate_result, "Error: An account with the entered email already exists.")  # Ensure the correct error message is returned
 
         # Test invalid email format
         invalid_email_result = create_user("invalid-email", "Invalid User")
-        self.assertEqual(invalid_email_result, "Error: The email invalid-email is not in a valid format.")  # Check error for invalid email format
+        self.assertEqual(invalid_email_result, "Error: The entered email is not in the correct format.")  # Check error for invalid email format
 
     def test_get_user_id(self):
         user_exists_results = get_user_id("bob.white@example.com")
@@ -129,3 +129,65 @@ class TestAccuaim (unittest.TestCase):
         # Test updating a non-existent user
         result = update_user(999, "newemail@example.com", "new.email@example.com")
         self.assertEqual(result, "Error: User does not exist.")  # Ensure error message is returned for non-existent user
+
+    def test_get_session_data_invalid_session(self):
+        # Try to get session data for a session that doesn't exist or doesn't belong to the user
+        invalid_session_data = get_session_data(1, 999)  # User 1 trying to access session 999
+        self.assertIn("error", invalid_session_data)
+        self.assertEqual(invalid_session_data["error"], "This session does not belong to the user or does not exist.")
+
+    def test_calculate_session_accuracy_no_shots(self):
+        # Test a session with no shots at all
+        results = calculate_session_accuracy(999)  # Assuming session 999 has no shots
+        self.assertEqual('0.00%', results)
+
+    def test_remove_shot_invalid(self):
+        # Try removing a shot from a session that does not belong to the user
+        result = remove_shot(1, 999, 1000)  # User 1 trying to remove shot 1000 from session 999
+        self.assertEqual(result, "Error: The specified session does not belong to the user.")
+
+    def test_update_user_email_duplicate(self):
+        # Test that updating user email to one that already exists fails
+        result = update_user(1, "John Doe", "bob.white@example.com")
+        self.assertEqual(result, "Error: The new email is already in use by another user.")
+
+    def test_create_user_invalid_name(self):
+        # Create a user with an empty name
+        result = create_user("test_invalid_name@example.com", "")
+        self.assertEqual(result, "Error: The full name cannot be empty.")
+
+    def test_remove_user_non_existent(self):
+        result = remove_user(9999)  # User 9999 does not exist
+        self.assertEqual(result, "Error: User not found.")
+
+    def test_remove_user_non_existent(self):
+        result = remove_user(9999)  # User 9999 does not exist
+        self.assertEqual(result, "Error: User not found.")
+        
+    def test_remove_user_with_sessions(self):
+        # Assuming user 2 has sessions and shots
+        result = remove_user(2)
+        self.assertEqual(result, "User with ID 2 and all associated records removed successfully.")
+
+        # Check if the user still exists
+        user = get_user(2)
+        self.assertEqual(user, "User does not exist")
+
+        # Check if the sessions for this user were deleted
+        sessions = get_user_sessions(2)
+        self.assertEqual(sessions, [])
+        
+    def test_create_user_email_with_spaces(self):
+        # Test email with leading/trailing spaces
+        result = create_user(" test@example.com ", "John Doe")
+        self.assertEqual(result, "Error: The entered email is not in the correct format.")  # Assuming you're trimming spaces in email validation
+        
+    def test_reorder_shots_after_removal(self):
+        unmodified_shots = get_session_shots(3)
+        shot_to_remove = unmodified_shots[0][0]  # Get the first shot ID
+
+        remove_result = remove_shot(1, 1, shot_to_remove)  # Remove the shot
+        self.assertEqual(remove_result, "Shot successfully removed.")
+        
+        modified_shots = get_session_shots(1)
+        self.assertTrue(all(modified_shots[i][0] == i + 1 for i in range(len(modified_shots))))  # Ensure the ShotIDs are sequential after removal
