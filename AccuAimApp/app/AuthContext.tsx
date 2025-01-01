@@ -13,6 +13,7 @@ interface AuthContextType {
   user: User | null;
   login: (userData: User) => void;
   logout: () => void;
+  updateUserName: (name: string) => void;
 }
 
 // Create the AuthContext with default values
@@ -26,6 +27,7 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
 
 // AuthProvider component to wrap the app and provide the auth context
 interface AuthProviderProps {
@@ -42,10 +44,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     setUser(null);
   };
+  const updateUserName = (name: string) => {
+    setUser((prevUser) => {
+      if (prevUser) {
+        return { ...prevUser, name };
+      }
+      return prevUser;
+    });
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUserName }}>
       {children}
     </AuthContext.Provider>
   );
 };
+

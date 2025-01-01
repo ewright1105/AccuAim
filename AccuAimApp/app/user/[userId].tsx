@@ -2,6 +2,7 @@ import { Text, View, ScrollView, Button, TextInput, Alert, StyleSheet, Touchable
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useEffect, useLayoutEffect, useState } from "react";
 import React from "react";
+import { useAuth } from "../AuthContext";
 
 export default function UserDetails() {
 
@@ -22,13 +23,14 @@ export default function UserDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigation = useNavigation();
+  const { updateUserName } = useAuth();
 
   useLayoutEffect(() => {
     navigation.setOptions({
       title: "Settings",
       headerLeft: () => (
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => router.back()}
           style={{ marginLeft: 15 }}
         >
            <Text style={{ color: "#F1C40F", fontSize: 26 }}>←</Text>
@@ -104,6 +106,7 @@ const updateUser = () => {
             data = data.replace('."', '.')
             Alert.alert("An Error has Occured!",data); // Show the error message from the server
           } else {
+            updateUserName(name);
             fetchUserDetails(userId); // Refresh the users list
             cancelEdit()
           }

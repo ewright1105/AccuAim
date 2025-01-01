@@ -96,9 +96,8 @@ export default function UserSessions() {
 
   if (error) {
     return (
-      <View style={styles.centeredContainer}>
-        <Text>{error}</Text>
-        <Button title="Go Back" onPress={() => router.back()} />
+      <View style={styles.container}>
+        <Text style={styles.errorText}>{error}</Text>
       </View>
     );
   }
@@ -147,5 +146,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  errorText: {
+    fontSize: 18,
+    color: "#F1C40F",  // Same gold color as other text
+    fontWeight: "bold",
+    textAlign: "center",
+    marginVertical: 20,
   },
 });
