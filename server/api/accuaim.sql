@@ -60,8 +60,8 @@ SELECT
   ShotPositionX,
   ShotPositionY,
   CASE 
-  WHEN ShotPositionX >= 0 AND ShotPositionX <= 6 
-   AND ShotPositionY >= 0 AND ShotPositionY <= 6 THEN 'Made'::shot_result
+  WHEN ShotPositionX >= 0 AND ShotPositionX <= 5.8 --made it 5.8 to account for pipe
+   AND ShotPositionY >= 0 AND ShotPositionY <= 5.8 THEN 'Made'::shot_result
   ELSE 'Missed'::shot_result
 END as Result
 FROM (

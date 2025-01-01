@@ -157,25 +157,26 @@ export default function SessionDetails() {
 
       {/* Lacrosse Goal Representation */}
       <View style={styles.goalContainer}>
-    <View style={styles.outerContainer}>
-      <View style={styles.innerGoal} />
-      {sessionData.shots.map((shot) => {
-        const position = plotShotPosition(shot.ShotPositionX, shot.ShotPositionY, shot.Result);
-        return (
-          <View
-            key={shot.ShotID}
-            style={[
-              styles.shotMarker,
-              {
-                left: position.left,
-                top: position.top,
-                backgroundColor: shot.Result === "Made" ? "green" : "red",
-              },
-            ]}
-          />
-        );
-      })}
-    </View>
+      <Text style={styles.shotsHeader}>Shooting Heatmap</Text>
+        <View style={styles.outerContainer}>
+          <View style={styles.innerGoal} />
+          {sessionData.shots.map((shot) => {
+            const position = plotShotPosition(shot.ShotPositionX, shot.ShotPositionY, shot.Result);
+            return (
+              <View
+                key={shot.ShotID}
+                style={[
+                  styles.shotMarker,
+                  {
+                    left: position.left,
+                    top: position.top,
+                    backgroundColor: shot.Result === "Made" ? "green" : "red",
+                  },
+                ]}
+              />
+            );
+          })}
+      </View>
     </View>
 
       {/* Shots Details */}
@@ -263,7 +264,8 @@ const styles = StyleSheet.create({
     width: 200,  // 6x6 goal frame
     height: 200,
     borderWidth: 2,
-    borderColor: "#fff",
+    borderColor: "#E67E22",
+    borderBottomColor: "transparent",
     borderRadius: 8,
     backgroundColor: "#222",
     left: 50,   // Center the inner goal: (300-200)/2 = 50
