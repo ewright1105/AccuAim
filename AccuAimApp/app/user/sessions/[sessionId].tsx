@@ -3,6 +3,15 @@ import { View, Text, Button, StyleSheet, ScrollView, TouchableOpacity } from "re
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useAuth } from '../../AuthContext';
 
+interface Shot {
+  ShotID: number;
+  SessionID: number;
+  ShotTime: string;
+  ShotPositionX: number;
+  ShotPositionY: number;
+  Result: 'Made' | 'Missed';
+}
+
 interface SessionDetailsData {
   user_id: number;
   session_id: number;
@@ -10,13 +19,13 @@ interface SessionDetailsData {
   missed_shots: number;
   total_shots: number;
   shooting_percentage: string;
+  shots: Shot[]; // Array of shot objects
 }
 
 export default function SessionDetails() {
   const { user } = useAuth();
   const route = useRoute();
   
-  // Ensure the sessionId is passed correctly as a number
   const { sessionId } = route.params as { sessionId: number };
 
   const [sessionData, setSessionData] = useState<SessionDetailsData | null>(null);
@@ -24,24 +33,23 @@ export default function SessionDetails() {
   const [error, setError] = useState<string | null>(null);
 
   const navigation = useNavigation();
-  
-    useLayoutEffect(() => {
-      navigation.setOptions({
-        title: "Session Details",
-        headerLeft: () => (
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={{ marginLeft: 15 }}
-          >
-             <Text style={{ color: "#F1C40F", fontSize: 26 }}>←</Text>
-          </TouchableOpacity>
-        ),
-      });
-    }, [navigation]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: "Session Details",
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ marginLeft: 15 }}
+        >
+          <Text style={{ color: "#F1C40F", fontSize: 26 }}>←</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   useEffect(() => {
     if (user && sessionId) {
-      // Convert user.id to a number if necessary
       fetchSessionData(Number(user.id), sessionId); 
     } else {
       setError("User not logged in or invalid session ID.");
@@ -52,16 +60,14 @@ export default function SessionDetails() {
   const fetchSessionData = async (userId: number, sessionId: number) => {
     try {
       setLoading(true);
-      const apiUrl = `http://127.0.0.1:4949/user/${userId}/sessions/${sessionId}`;  // Changed to localhost
+      const apiUrl = `http://127.0.0.1:4949/user/${userId}/sessions/${sessionId}`;
       const response = await fetch(apiUrl);
 
-      // Check if the response is OK
       if (!response.ok) {
         throw new Error("Failed to fetch session data.");
       }
 
       const data: SessionDetailsData = await response.json();
-
       setSessionData(data);
       setLoading(false);
     } catch (err) {
@@ -97,6 +103,7 @@ export default function SessionDetails() {
 
   return (
     <ScrollView style={styles.container}>
+      {/* Session Details */}
       <View style={styles.sessionDetailsContainer}>
         <Text style={styles.sessionDetailText}>
           <Text style={styles.boldText}>Session ID:</Text> {sessionData.session_id}
@@ -117,6 +124,27 @@ export default function SessionDetails() {
           <Text style={styles.boldText}>Shooting Percentage:</Text> {sessionData.shooting_percentage}
         </Text>
       </View>
+
+      {/* Shots Details */}
+      <View style={styles.shotsDetailsContainer}>
+        <Text style={styles.shotsHeader}>Shots Details:</Text>
+        {sessionData.shots.map((shot) => (
+          <View key={shot.ShotID} style={styles.shotContainer}>
+            <Text style={styles.shotText}>
+              <Text style={styles.boldText}>Shot ID:</Text> {shot.ShotID}
+            </Text>
+            <Text style={styles.shotText}>
+              <Text style={styles.boldText}>Time:</Text> {shot.ShotTime}
+            </Text>
+            <Text style={styles.shotText}>
+              <Text style={styles.boldText}>Position:</Text> ({shot.ShotPositionX}, {shot.ShotPositionY})
+            </Text>
+            <Text style={styles.shotText}>
+              <Text style={styles.boldText}>Result:</Text> {shot.Result}
+            </Text>
+          </View>
+        ))}
+      </View>
     </ScrollView>
   );
 }
@@ -126,12 +154,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: "#121212",
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#F1C40F",
-    marginBottom: 20,
   },
   sessionDetailsContainer: {
     backgroundColor: "#333",
@@ -146,6 +168,24 @@ const styles = StyleSheet.create({
   },
   boldText: {
     fontWeight: "bold",
+  },
+  shotsDetailsContainer: {
+    backgroundColor: "#444",
+    padding: 15,
+    borderRadius: 8,
+  },
+  shotsHeader: {
+    fontSize: 18,
+    color: "#F1C40F",
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  shotContainer: {
+    marginBottom: 15,
+  },
+  shotText: {
+    fontSize: 16,
+    color: "#F1C40F",
   },
   centeredContainer: {
     flex: 1,

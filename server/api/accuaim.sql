@@ -53,100 +53,99 @@ CREATE TABLE shots (
     Result shot_result NOT NULL,
     FOREIGN KEY (SessionID) REFERENCES practice_sessions(SessionID)
 );
--- Insert test data into the shots table
+-- Insert test data with randomized shot positions for all 14 sessions
+
+-- Insert test data with randomized shot positions for all 14 sessions
+-- Insert test data with randomized shot positions for all 14 sessions
 INSERT INTO shots (SessionID, ShotPositionX, ShotPositionY, Result)
 VALUES
- -- Session 1 (4 shots: 2 Made, 2 Missed)
-  (1, ROUND((35.50 / 100) * 6) + 1, ROUND((12.30 / 100) * 6) + 1, 'Made'),
-  (1, ROUND((40.20 / 100) * 6) + 1, ROUND((15.00 / 100) * 6) + 1, 'Missed'),
-  (1, ROUND((38.00 / 100) * 6) + 1, ROUND((14.00 / 100) * 6) + 1, 'Made'),
-  (1, ROUND((36.00 / 100) * 6) + 1, ROUND((13.50 / 100) * 6) + 1, 'Missed'),
+  -- Session 1 (4 shots: 2 Made, 2 Missed)
+  (1, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (1, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (1, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (1, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
 
   -- Session 2 (5 shots: 3 Made, 2 Missed)
-  (2, ROUND((50.00 / 100) * 6) + 1, ROUND((20.00 / 100) * 6) + 1, 'Made'),
-  (2, ROUND((45.10 / 100) * 6) + 1, ROUND((18.40 / 100) * 6) + 1, 'Missed'),
-  (2, ROUND((48.00 / 100) * 6) + 1, ROUND((19.50 / 100) * 6) + 1, 'Made'),
-  (2, ROUND((46.50 / 100) * 6) + 1, ROUND((17.30 / 100) * 6) + 1, 'Made'),
-  (2, ROUND((47.20 / 100) * 6) + 1, ROUND((18.00 / 100) * 6) + 1, 'Missed'),
+  (2, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (2, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (2, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (2, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (2, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
 
   -- Session 3 (6 shots: 4 Made, 2 Missed)
-  (3, ROUND((25.30 / 100) * 6) + 1, ROUND((10.50 / 100) * 6) + 1, 'Made'),
-  (3, ROUND((30.00 / 100) * 6) + 1, ROUND((12.00 / 100) * 6) + 1, 'Made'),
-  (3, ROUND((28.00 / 100) * 6) + 1, ROUND((11.50 / 100) * 6) + 1, 'Missed'),
-  (3, ROUND((27.50 / 100) * 6) + 1, ROUND((11.20 / 100) * 6) + 1, 'Made'),
-  (3, ROUND((29.00 / 100) * 6) + 1, ROUND((12.80 / 100) * 6) + 1, 'Made'),
-  (3, ROUND((26.80 / 100) * 6) + 1, ROUND((10.70 / 100) * 6) + 1, 'Missed'),
+  (3, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (3, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (3, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (3, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (3, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (3, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
 
   -- Session 4 (5 shots: 2 Made, 3 Missed)
-  (4, ROUND((15.75 / 100) * 6) + 1, ROUND((8.90 / 100) * 6) + 1, 'Missed'),
-  (4, ROUND((20.20 / 100) * 6) + 1, ROUND((9.50 / 100) * 6) + 1, 'Made'),
-  (4, ROUND((18.00 / 100) * 6) + 1, ROUND((8.00 / 100) * 6) + 1, 'Missed'),
-  (4, ROUND((17.30 / 100) * 6) + 1, ROUND((9.10 / 100) * 6) + 1, 'Missed'),
-  (4, ROUND((19.50 / 100) * 6) + 1, ROUND((9.80 / 100) * 6) + 1, 'Made'),
+  (4, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (4, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (4, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (4, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (4, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
 
   -- Session 5 (4 shots: 2 Made, 2 Missed)
-  (5, ROUND((35.60 / 100) * 6) + 1, ROUND((12.40 / 100) * 6) + 1, 'Made'),
-  (5, ROUND((40.00 / 100) * 6) + 1, ROUND((14.20 / 100) * 6) + 1, 'Missed'),
-  (5, ROUND((38.20 / 100) * 6) + 1, ROUND((13.80 / 100) * 6) + 1, 'Made'),
-  (5, ROUND((36.10 / 100) * 6) + 1, ROUND((13.60 / 100) * 6) + 1, 'Missed'),
+  (5, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (5, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (5, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (5, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
 
   -- Session 6 (5 shots: 3 Made, 2 Missed)
-  (6, ROUND((48.50 / 100) * 6) + 1, ROUND((19.30 / 100) * 6) + 1, 'Made'),
-  (6, ROUND((45.60 / 100) * 6) + 1, ROUND((17.90 / 100) * 6) + 1, 'Missed'),
-  (6, ROUND((47.00 / 100) * 6) + 1, ROUND((18.10 / 100) * 6) + 1, 'Made'),
-  (6, ROUND((44.00 / 100) * 6) + 1, ROUND((16.50 / 100) * 6) + 1, 'Made'),
-  (6, ROUND((45.90 / 100) * 6) + 1, ROUND((17.20 / 100) * 6) + 1, 'Missed'),
+  (6, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (6, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (6, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (6, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (6, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
 
   -- Session 7 (6 shots: 4 Made, 2 Missed)
-  (7, ROUND((25.60 / 100) * 6) + 1, ROUND((11.00 / 100) * 6) + 1, 'Made'),
-  (7, ROUND((30.40 / 100) * 6) + 1, ROUND((12.30 / 100) * 6) + 1, 'Made'),
-  (7, ROUND((28.30 / 100) * 6) + 1, ROUND((11.70 / 100) * 6) + 1, 'Missed'),
-  (7, ROUND((27.00 / 100) * 6) + 1, ROUND((10.90 / 100) * 6) + 1, 'Made'),
-  (7, ROUND((29.20 / 100) * 6) + 1, ROUND((12.50 / 100) * 6) + 1, 'Made'),
-  (7, ROUND((26.70 / 100) * 6) + 1, ROUND((11.20 / 100) * 6) + 1, 'Missed'),
+  (7, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (7, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (7, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (7, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (7, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (7, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
 
   -- Session 8 (4 shots: 2 Made, 2 Missed)
-  (8, ROUND((15.90 / 100) * 6) + 1, ROUND((9.00 / 100) * 6) + 1, 'Missed'),
-  (8, ROUND((20.50 / 100) * 6) + 1, ROUND((9.20 / 100) * 6) + 1, 'Made'),
-  (8, ROUND((18.30 / 100) * 6) + 1, ROUND((8.60 / 100) * 6) + 1, 'Missed'),
-  (8, ROUND((17.40 / 100) * 6) + 1, ROUND((9.10 / 100) * 6) + 1, 'Made');
+  (8, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (8, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (8, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (8, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
 
   -- Session 9 (5 shots: 3 Made, 2 Missed)
-  (9, ROUND((35.80 / 100) * 6) + 1, ROUND((13.00 / 100) * 6) + 1, 'Made'),
-  (9, ROUND((40.10 / 100) * 6) + 1, ROUND((14.40 / 100) * 6) + 1, 'Missed'),
-  (9, ROUND((38.50 / 100) * 6) + 1, ROUND((13.60 / 100) * 6) + 1, 'Made'),
-  (9, ROUND((36.30 / 100) * 6) + 1, ROUND((13.80 / 100) * 6) + 1, 'Missed'),
-  (9, ROUND((37.20 / 100) * 6) + 1, ROUND((13.50 / 100) * 6) + 1, 'Made'),
+  (9, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (9, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (9, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (9, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (9, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
 
-  -- Session 10 (3 shots: 1 Made, 2 Missed)
-  (10, ROUND((50.20 / 100) * 6) + 1, ROUND((20.30 / 100) * 6) + 1, 'Made'),
-  (10, ROUND((45.70 / 100) * 6) + 1, ROUND((18.10 / 100) * 6) + 1, 'Missed'),
-  (10, ROUND((46.00 / 100) * 6) + 1, ROUND((19.10 / 100) * 6) + 1, 'Missed'),
+  -- Session 10 (4 shots: 2 Made, 2 Missed)
+  (10, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (10, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (10, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
 
-  -- Session 11 (6 shots: 3 Made, 3 Missed)
-  (11, ROUND((28.20 / 100) * 6) + 1, ROUND((11.50 / 100) * 6) + 1, 'Made'),
-  (11, ROUND((29.50 / 100) * 6) + 1, ROUND((12.60 / 100) * 6) + 1, 'Missed'),
-  (11, ROUND((30.10 / 100) * 6) + 1, ROUND((12.90 / 100) * 6) + 1, 'Made'),
-  (11, ROUND((27.60 / 100) * 6) + 1, ROUND((11.20 / 100) * 6) + 1, 'Missed'),
-  (11, ROUND((28.80 / 100) * 6) + 1, ROUND((11.80 / 100) * 6) + 1, 'Made'),
-  (11, ROUND((29.00 / 100) * 6) + 1, ROUND((12.00 / 100) * 6) + 1, 'Missed'),
+  -- Session 11 (4 shots: 2 Made, 2 Missed)
+  (11, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (11, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (11, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (11, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
 
-  -- Session 12 (5 shots: 4 Made, 1 Missed)
-  (12, ROUND((36.20 / 100) * 6) + 1, ROUND((14.00 / 100) * 6) + 1, 'Made'),
-  (12, ROUND((35.90 / 100) * 6) + 1, ROUND((13.90 / 100) * 6) + 1, 'Made'),
-  (12, ROUND((38.10 / 100) * 6) + 1, ROUND((14.20 / 100) * 6) + 1, 'Made'),
-  (12, ROUND((37.30 / 100) * 6) + 1, ROUND((13.80 / 100) * 6) + 1, 'Made'),
-  (12, ROUND((36.50 / 100) * 6) + 1, ROUND((13.70 / 100) * 6) + 1, 'Missed'),
+  -- Session 12 (5 shots: 3 Made, 2 Missed)
+  (12, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (12, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (12, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (12, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (12, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
 
-  -- Session 13 (4 shots: 1 Made, 3 Missed)
-  (13, ROUND((40.00 / 100) * 6) + 1, ROUND((15.00 / 100) * 6) + 1, 'Missed'),
-  (13, ROUND((42.00 / 100) * 6) + 1, ROUND((15.50 / 100) * 6) + 1, 'Made'),
-  (13, ROUND((41.00 / 100) * 6) + 1, ROUND((15.40 / 100) * 6) + 1, 'Missed'),
-  (13, ROUND((43.00 / 100) * 6) + 1, ROUND((15.30 / 100) * 6) + 1, 'Missed'),
+  -- Session 13 (3 shots: 1 Made, 2 Missed)
+  (13, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (13, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (13, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
 
-  -- Session 14 (5 shots: 2 Made, 3 Missed)
-  (14, ROUND((50.50 / 100) * 6) + 1, ROUND((20.40 / 100) * 6) + 1, 'Made'),
-  (14, ROUND((48.70 / 100) * 6) + 1, ROUND((19.80 / 100) * 6) + 1, 'Missed'),
-  (14, ROUND((47.40 / 100) * 6) + 1, ROUND((19.00 / 100) * 6) + 1, 'Made'),
-  (14, ROUND((46.30 / 100) * 6) + 1, ROUND((18.60 / 100) * 6) + 1, 'Missed'),
-  (14, ROUND((45.90 / 100) * 6) + 1, ROUND((18.40 / 100) * 6) + 1, 'Missed');
+  -- Session 14 (4 shots: 2 Made, 2 Missed)
+  (14, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (14, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made'),
+  (14, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Missed'),
+  (14, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), 'Made');

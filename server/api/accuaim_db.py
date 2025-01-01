@@ -43,8 +43,18 @@ def get_session_shots(session_id):
     WHERE SessionID = %s;
     """
     result = exec_get_all(sql, (session_id,))
-    
-    return result
+    all_shots = [
+        {
+            'ShotID': shot[0],
+            'SessionID': shot[1],
+            'ShotTime': shot[2],  # Make sure this is in the correct format, e.g., ISO string
+            'ShotPositionX': shot[3],
+            'ShotPositionY': shot[4],
+            'Result': shot[5]
+        }
+        for shot in result
+    ]
+    return all_shots
 
 def get_session_made_shots(session_id):
     """
@@ -454,6 +464,7 @@ def get_session_data(user_id, session_id):
         'missed_shots': missed_shots_count,
         'total_shots': total_shots,
         'shooting_percentage': f"{shooting_percentage:.2f}%",
+        'shots': all_shots
     }
     
     return session_data

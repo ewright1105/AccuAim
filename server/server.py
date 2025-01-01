@@ -21,6 +21,7 @@ api.add_resource(UserSessions, '/user/<int:UserID>/sessions')
 api.add_resource(SessionDetails, '/user/<int:UserID>/sessions/<int:SessionID>')
 
 
+
 if __name__ == "__main__":
     print("Loading db...")
     rebuild_tables()
