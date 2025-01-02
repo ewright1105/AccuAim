@@ -1,5 +1,6 @@
-from api.db_utils import *
+from db_utils import *
 import re
+import bcrypt
 
 def rebuild_tables():
     exec_sql_file('accuaim.sql')
@@ -212,7 +213,7 @@ def get_all_users():
         list: a list of tuples containing user details"""
         
     sql = """
-    SELECT *
+    SELECT UserID, Email, FullName, CreatedAt
     FROM users
     ORDER BY UserID"""
     
@@ -231,7 +232,7 @@ def get_user(UserID):
         tuple: tuple containing all information connected to given UserID, if it exists
     """
     sql = """
-    SELECT *
+    SELECT UserID, Email, FullName, CreatedAt
     FROM users
     WHERE UserID = %s"""
     
@@ -241,22 +242,24 @@ def get_user(UserID):
         return result
     return "User does not exist"
     
-def create_user(email, full_name):
+def create_user(email, full_name, password):
     """
-    Creates a new user in the users table.
+    Creates a new user in the users table with a hashed password.
 
     Args:
-        email (str): The email of the user.
-        full_name (str): The full name of the user.
+        email (str): The email of the user
+        full_name (str): The full name of the user
+        password (str): The user's password (will be hashed)
 
     Returns:
-        str: Success or error message.
+        str: Success or error message
     """
-    # Validate the email format
+    if not full_name:
+        return "Error: The full name cannot be empty."
+
     if not is_valid_email(email):
-        return f"Error: The entered email is not in the correct format."
+        return "Error: The entered email is not in the correct format."
     
-    # Check if a user with the given email already exists
     sql_check = """
     SELECT * FROM users WHERE LOWER(Email) = LOWER(%s)
     """
@@ -264,37 +267,43 @@ def create_user(email, full_name):
     user_exists = exec_get_one(sql_check, (email,))
     
     if user_exists:
-        return f"Error: An account with the entered email already exists."
+        return "Error: An account with the entered email already exists."
     
-    # If the email format is valid and it doesn't already exist, insert the new user
+    # Hash the password using bcrypt
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+    
     sql = """
-    INSERT INTO users (Email, FullName)
-    VALUES (%s, %s);
+    INSERT INTO users (Email, FullName, PasswordHash)
+    VALUES (%s, %s, %s);
     """
     try:
-        # Execute the SQL to insert the user
-        exec_commit(sql, (email, full_name))
+        exec_commit(sql, (email, full_name, hashed_password.decode('utf-8')))
         return f"User {full_name} created successfully."
     except Exception as e:
         return f"An error occurred while creating the user: {e}"
 
     
-def remove_user(user_id):
+def remove_user(user_id, password):
     """
     Removes a user from the users table based on their UserID.
 
     Args:
         user_id (int): The ID of the user to remove.
-
+        password (string): The user's password for verification
     Returns:
         str: Success or error message.
     """
      # First, check if the user exists
     sql_check = "SELECT * FROM users WHERE UserID = %s"
-    user_exists = exec_get_one(sql_check, (user_id,))
+    user = exec_get_one(sql_check, (user_id,))
 
-    if not user_exists:
+    if not user:
         return "Error: User not found."
+    
+    #now check if password is correct
+    if not bcrypt.checkpw(password.encode('utf-8'), user[3].encode('utf-8')):
+        return "Error: Incorrect password."
 
     # Delete associated shots
     sql_delete_shots = "DELETE FROM shots WHERE SessionID IN (SELECT SessionID FROM practice_sessions WHERE UserID = %s)"
@@ -352,45 +361,72 @@ def is_valid_email(email):
         return False
 
 
-def update_user(user_id, new_name, new_email):
+def update_user(user_id, new_name, new_email, current_password=None, new_password=None):
     """
-    Updates both a user's name and email with new values.
+    Updates a user's information and optionally their password.
 
     Args:
-        user_id (int): ID of the user to update.
-        new_name (str): The user's updated name.
-        new_email (str): The user's updated email.
+        user_id (int): ID of the user to update
+        new_name (str): The user's updated name
+        new_email (str): The user's updated email
+        current_password (str, optional): Current password for verification
+        new_password (str, optional): New password to set
         
     Returns:
-        str: Success or Error message.
+        str: Success or Error message
     """
-    
-    # Validate email format
     if not is_valid_email(new_email):
         return "Error: Invalid email format."
 
     # Check if the email is already in use by another user
-    existing_user = exec_get_one("SELECT * FROM users WHERE LOWER(email) = LOWER(%s) AND UserID != %s", (new_email, user_id))
+    existing_user = exec_get_one(
+        "SELECT * FROM users WHERE LOWER(email) = LOWER(%s) AND UserID != %s", 
+        (new_email, user_id)
+    )
     if existing_user:
         return "Error: The new email is already in use by another user."
     
-    # Check if user exists
-    user = exec_get_one("SELECT * FROM users WHERE UserID = %s", (user_id,))
+    # Get current user data
+    user = exec_get_one(
+        "SELECT * FROM users WHERE UserID = %s", 
+        (user_id,)
+    )
     
-    if user:
-        try:
-            # Execute the SQL to update both name and email
+    if not user:
+        return "Error: User does not exist."
+
+    try:
+        if new_password:
+            # Verify current password before allowing password change
+            if not current_password:
+                return "Error: Current password required to set new password."
+                
+            if not bcrypt.checkpw(current_password.encode('utf-8'), 
+                                user[3].encode('utf-8')):  # Assuming PasswordHash is at index 3
+                return "Error: Current password is incorrect."
+                
+            # Hash the new password
+            salt = bcrypt.gensalt()
+            new_hash = bcrypt.hashpw(new_password.encode('utf-8'), salt)
+            
             sql = """
                 UPDATE users 
-                SET FullName = %s, email = %s 
+                SET FullName = %s, email = %s, PasswordHash = %s
+                WHERE UserID = %s
+            """
+            exec_commit(sql, (new_name, new_email, new_hash.decode('utf-8'), user_id))
+        else:
+            # Update without changing password
+            sql = """
+                UPDATE users 
+                SET FullName = %s, email = %s
                 WHERE UserID = %s
             """
             exec_commit(sql, (new_name, new_email, user_id))
-            return f"User successfully updated: Name = {new_name}, Email = {new_email}."
-        except Exception as e:
-            return f"An error occurred while updating the user: {e}"
-    else:
-        return "Error: User does not exist."
+            
+        return f"User successfully updated: Name = {new_name}, Email = {new_email}"
+    except Exception as e:
+        return f"An error occurred while updating the user: {e}"
     
 def get_user_by_email(email):
     """
@@ -468,7 +504,77 @@ def get_session_data(user_id, session_id):
     }
     
     return session_data
+def verify_user(email, password):
+    """
+    Verifies a user's credentials.
 
+    Args:
+        email (str): The user's email
+        password (str): The password to verify
+
+    Returns:
+        dict: User information if verified, None if not
+    """
+    sql = """
+    SELECT UserID, Email, FullName, PasswordHash
+    FROM users
+    WHERE LOWER(Email) = LOWER(%s)
+    """
+    
+    user = exec_get_one(sql, (email,))
+    
+    if user and bcrypt.checkpw(password.encode('utf-8'), user[3].encode('utf-8')):
+        return {
+            "id": user[0],
+            "email": user[1],
+            "name": user[2]
+        }
+    return None
+
+def change_password(user_id, current_password, new_password):
+    """
+    Changes a user's password.
+
+    Args:
+        user_id (int): The user's ID
+        current_password (str): The current password
+        new_password (str): The new password to set
+
+    Returns:
+        str: Success or error message
+    """
+    # Get current user data including password hash
+    sql = """
+    SELECT PasswordHash
+    FROM users
+    WHERE UserID = %s
+    """
+    
+    user = exec_get_one(sql, (user_id,))
+    
+    if not user:
+        return "Error: User not found."
+        
+    # Verify current password
+    if not bcrypt.checkpw(current_password.encode('utf-8'), 
+                        user[0].encode('utf-8')):
+        return "Error: Current password is incorrect."
+        
+    # Hash and set new password
+    salt = bcrypt.gensalt()
+    new_hash = bcrypt.hashpw(new_password.encode('utf-8'), salt)
+    
+    update_sql = """
+    UPDATE users
+    SET PasswordHash = %s
+    WHERE UserID = %s
+    """
+    
+    try:
+        exec_commit(update_sql, (new_hash.decode('utf-8'), user_id))
+        return "Password successfully updated."
+    except Exception as e:
+        return f"An error occurred while updating the password: {e}"
 
     
     

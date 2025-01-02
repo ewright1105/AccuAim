@@ -7,15 +7,16 @@ CREATE TABLE users (
     UserID SERIAL PRIMARY KEY,
     Email VARCHAR(255) UNIQUE NOT NULL,
     FullName VARCHAR(255),
+    PasswordHash VARCHAR(255) NOT NULL,
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 -- Insert test data into the users table
-INSERT INTO users (Email, FullName)
+INSERT INTO users (Email, FullName, PasswordHash)
 VALUES
-  ('john.doe@example.com', 'John Doe'),
-  ('jane.smith@example.com', 'Jane Smith'),
-  ('alice.jones@example.com', 'Alice Jones'),
-  ('bob.white@example.com', 'Bob White');
+  ('john.doe@example.com', 'John Doe', '$2a$12$EVVpQjkwDqTQCk2JtKvZz.kPfn9TgtZEG1XVrW8vS1tqx8POA2F7C'),
+  ('jane.smith@example.com', 'Jane Smith', '$2a$12$EVVpQjkwDqTQCk2JtKvZz.kPfn9TgtZEG1XVrW8vS1tqx8POA2F7C'),
+  ('alice.jones@example.com', 'Alice Jones', '$2a$12$5oVxxkjogqfGv27lVQWISuoIbgL1P0mhVu0jcQoxFZoHZsTH27e5K'),
+  ('bob.white@example.com', 'Bob White', '$2a$12$7ECRX42XN6z6ql9h1Vml9ObcdqzAY0qZhNcZbyP/m7fXfohSxgMWu');
 
 CREATE TABLE practice_sessions (
     SessionID SERIAL PRIMARY KEY,
@@ -60,7 +61,7 @@ SELECT
   ShotPositionX,
   ShotPositionY,
   CASE 
-  WHEN ShotPositionX >= 0 AND ShotPositionX <= 5.8 --made it 5.8 to account for pipe
+  WHEN ShotPositionX >= 0 AND ShotPositionX <= 5.8 --made it 5.8 to account for pup\\
    AND ShotPositionY >= 0 AND ShotPositionY <= 5.8 THEN 'Made'::shot_result
   ELSE 'Missed'::shot_result
 END as Result
