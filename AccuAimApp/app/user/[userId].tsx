@@ -5,63 +5,57 @@ import React from "react";
 import { useAuth } from "../AuthContext";
 
 export default function UserDetails() {
-
   type User = {
     id: number;
     email: string;
     name: string;
     timestamp: string;
   };
+
   const { userId } = useLocalSearchParams(); // Retrieve the user ID from the route parameters
   const router = useRouter();
-  const [user, setUser] = useState<{
-    id: number;
-    email: string;
-    name: string;
-    timestamp: string;
-  } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigation = useNavigation();
   const { updateUserName } = useAuth();
 
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [editedName, setEditedName] = useState("");
+  const [editedEmail, setEditedEmail] = useState("");
+
+  const [password, setPassword] = useState(""); // Password field for delete confirmation
+  const [confirmPassword, setConfirmPassword] = useState(""); // Confirm password field for delete confirmation
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false); // Flag to show confirm password fields
+
   useLayoutEffect(() => {
     navigation.setOptions({
       title: "Settings",
       headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ marginLeft: 15 }}
-        >
-           <Text style={{ color: "#F1C40F", fontSize: 26 }}>←</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 15 }}>
+          <Text style={{ color: "#F1C40F", fontSize: 26 }}>←</Text>
         </TouchableOpacity>
       ),
     });
   }, [navigation]);
-  
+
   useEffect(() => {
     if (userId) {
       fetchUserDetails(userId);
     }
   }, [userId]);
 
-  const [editUser, setEditUser] = useState<User | null>(null); // User being edited
-  const [editedName, setEditedName] = useState(""); // New name for edit
-  const [editedEmail, setEditedEmail] = useState(""); // New email for edit
-
   const fetchUserDetails = async (userId: String | String[]) => {
     try {
       const response = await fetch(`http://127.0.0.1:4949/user/${userId}`);
       const data = await response.json();
-
-      // Now handle the API response correctly
       if (data && data.length > 0) {
         const userData = data;
         setUser({
-          id: userData[0], 
-          email: userData[1], 
-          name: userData[2], 
-          timestamp: userData[3], 
+          id: userData[0],
+          email: userData[1],
+          name: userData[2],
+          timestamp: userData[3],
         });
       } else {
         setError("User not found");
@@ -73,83 +67,86 @@ export default function UserDetails() {
       setLoading(false);
     }
   };
+
   const cancelEdit = () => {
-    setEditUser(null);  // Clear the editUser state to exit editing mode
-    setEditedName("");  // Reset the edited name field
-    setEditedEmail(""); // Reset the edited email field
+    setEditUser(null);
+    setEditedName("");
+    setEditedEmail("");
   };
 
-// Function to update an existing user
-const updateUser = () => {
-  if (editUser) {
-    const name = editedName.trim();
-    const email = editedEmail.trim();
+  const updateUser = () => {
+    if (editUser) {
+      const name = editedName.trim();
+      const email = editedEmail.trim();
 
-    if (name && email) {
-      fetch("http://127.0.0.1:4949/", {
-        method: "PUT",
-        body: JSON.stringify({
-          UserID: editUser.id,
-          name,
-          email,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-        .then((response) => response.text()) // Using `.text()` to capture response as plain text
-        .then((data) => {
-        
-          if (data.includes("Error")) {
-            //remove quotations
-            data = data.replace('"',"")
-            data = data.replace('."', '.')
-            Alert.alert("An Error has Occured!",data); // Show the error message from the server
-          } else {
-            updateUserName(name);
-            fetchUserDetails(userId); // Refresh the users list
-            cancelEdit()
-          }
+      if (name && email) {
+        fetch("http://127.0.0.1:4949/", {
+          method: "PUT",
+          body: JSON.stringify({
+            UserID: editUser.id,
+            name,
+            email,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
         })
-        .catch((error) => {
-          console.error("Error adding user:", error);
-          Alert.alert("Error", "Failed to add user. Please try again.");
-        });
-        } else {
+          .then((response) => response.text())
+          .then((data) => {
+            if (data.includes("Error")) {
+              data = data.replace('"', "").replace('."', '.');
+              Alert.alert("An Error has Occured!", data);
+            } else {
+              updateUserName(name);
+              fetchUserDetails(userId);
+              cancelEdit();
+            }
+          })
+          .catch((error) => {
+            console.error("Error adding user:", error);
+            Alert.alert("Error", "Failed to add user. Please try again.");
+          });
+      } else {
         Alert.alert("Input Error", "Name and email are required.");
-        }
-      };
+      }
     }
+  };
 
-    // Function to delete a user
-const deleteUser = (id: number) => {
-  fetch("http://127.0.0.1:4949/", {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      UserID: id,  
-    }),
-  })
-    .then((response) => response.json())  
-    .then(data => {
-      data.trim('"','')
-      data.trim('."', '')
-      if(data.includes('Error')){
-        Alert.alert("Error Deleting User", data)
-      }
-      else{
-        router.push('/') 
-      }
+  const deleteUser = (id: number, password: string) => {
+    fetch("http://127.0.0.1:4949/", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        UserID: id,
+        password: password,
+      }),
     })
-    .catch((error) => {
-      console.error("Error deleting user:", error);
-    });
-};
+      .then((response) => response.json())
+      .then((data) => {
+        data.trim('"', '');
+        data.trim('."', '');
+        if (data.includes('Error')) {
+          Alert.alert("Error Deleting User", data);
+        } else {
+          router.push('/');
+        }
+      })
+      .catch((error) => {
+        console.error("Error deleting user:", error);
+      });
+  };
 
-  
-  
+  const handleDeleteUser = () => {
+    if (password !== confirmPassword) {
+      Alert.alert("Password Mismatch", "The passwords do not match.");
+    } else {
+      deleteUser(user!.id, password);
+      setIsConfirmingDelete(false); // Hide the confirm password fields
+    }
+  };
+
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -200,7 +197,7 @@ const deleteUser = (id: number) => {
                 placeholder="Update name"
                 value={editedName}
                 onChangeText={setEditedName}
-                placeholderTextColor="#F1C40F" // Light yellow placeholder
+                placeholderTextColor="#F1C40F"
               />
               <TextInput
                 style={styles.input}
@@ -208,7 +205,7 @@ const deleteUser = (id: number) => {
                 value={editedEmail}
                 onChangeText={setEditedEmail}
                 keyboardType="email-address"
-                placeholderTextColor="#F1C40F" // Light yellow placeholder
+                placeholderTextColor="#F1C40F"
               />
               <Button title="Update User" onPress={updateUser} color="#F1C40F" />
               <Button title="Cancel" onPress={cancelEdit} color="red" />
@@ -225,20 +222,42 @@ const deleteUser = (id: number) => {
                   setEditedName(user.name);
                   setEditedEmail(user.email);
                 }}
-                color="#F1C40F" // Yellow color for button
+                color="#F1C40F"
               />
               <Button title="Sign Out" onPress={() => router.push('/')} color="#F1C40F" />
               <Button
                 title="Delete User"
-                onPress={() => deleteUser(user.id)}
-                color="red" // Red color for delete
+                onPress={() => setIsConfirmingDelete(true)}
+                color="red"
               />
             </>
           )}
+
+          {/* Confirm password inputs when deleting */}
+          {isConfirmingDelete && (
+            <View style={styles.deleteConfirmContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                placeholderTextColor="#F1C40F"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+                placeholderTextColor="#F1C40F"
+              />
+              <Button title="Confirm Deletion" onPress={handleDeleteUser} color="red" />
+              <Button title="Cancel" onPress={() => setIsConfirmingDelete(false)} color="gray" />
+            </View>
+          )}
         </View>
       )}
-
-      
     </ScrollView>
   );
 }
@@ -252,21 +271,8 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#F1C40F", 
+    color: "#F1C40F",
     marginBottom: 20,
-  },
-  centeredContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    fontSize: 18,
-    color: "#F1C40F", 
-  },
-  errorText: {
-    fontSize: 18,
-    color: "red",
   },
   detailRow: {
     marginBottom: 15,
@@ -274,22 +280,25 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#F1C40F", 
+    color: "#F1C40F",
   },
   detailText: {
     fontSize: 16,
-    color: "#F1C40F", 
+    color: "#F1C40F",
   },
   editContainer: {
     marginVertical: 20,
   },
   input: {
     height: 40,
-    borderColor: "#F1C40F", 
+    borderColor: "#F1C40F",
     borderWidth: 1,
     marginBottom: 10,
     width: "100%",
     paddingHorizontal: 10,
-    color: "#F1C40F", 
+    color: "#F1C40F",
+  },
+  deleteConfirmContainer: {
+    marginTop: 20,
   },
 });

@@ -5,9 +5,12 @@ import { View, Text, Button, Alert, TextInput, StyleSheet, TouchableOpacity } fr
 export default function SignUp() {
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [newUserId, setNewUserId] = useState(null);
   const router = useRouter();
   const navigation = useNavigation();
+
   useLayoutEffect(() => {
     navigation.setOptions({
       title: "AccuAim",
@@ -21,14 +24,13 @@ export default function SignUp() {
       ),
     });
   }, [navigation]);
-  
+
   type User = {
     id: number;
     email: string;
     name: string;
     timestamp: string;
   };
-  
 
   // Function to fetch the new user ID
   const updateNewUserId = async () => {
@@ -38,7 +40,7 @@ export default function SignUp() {
         throw new Error(`HTTP Error: ${response.status}`);
       }
       const data = await response.json();
-      
+
       const usersList = data.map((userData: [number, string, string, string]) => ({
         id: userData[0],
         email: userData[1],
@@ -64,17 +66,31 @@ export default function SignUp() {
   const addUser = async () => {
     const name = newName.trim();
     const email = newEmail.trim();
+    const password = newPassword.trim();
+    const confirmPasswordTrimmed = confirmPassword.trim();
 
-    // Check if both fields are filled
-    if (!name || !email) {
-      Alert.alert("Input Error", "Name and email are required.");
+    // Check if all fields are filled
+    if (!name || !email || !password || !confirmPassword) {
+      Alert.alert("Input Error", "All fields are required.");
+      return;
+    }
+
+    // Check if passwords match
+    if (password !== confirmPasswordTrimmed) {
+      Alert.alert("Password Error", "Passwords do not match.");
+      return;
+    }
+
+    // Password strength validation (simple example: minimum 8 characters)
+    if (password.length < 8) {
+      Alert.alert("Password Error", "Password must be at least 8 characters.");
       return;
     }
 
     try {
       const response = await fetch("http://127.0.0.1:4949/", {
         method: "POST",
-        body: JSON.stringify({ name, email }),
+        body: JSON.stringify({ name, email, password }), // Include password
         headers: {
           "Content-Type": "application/json",
         },
@@ -89,6 +105,8 @@ export default function SignUp() {
         // If no error, reset fields and fetch user ID
         setNewName("");
         setNewEmail("");
+        setNewPassword("");
+        setConfirmPassword("");
         const userId = await updateNewUserId(); // Fetch the new user ID
 
         if (userId) {
@@ -106,21 +124,37 @@ export default function SignUp() {
   return (
     <View style={styles.container}>
       <TextInput
-      style={styles.input}
-      placeholder="Enter name"
-      placeholderTextColor="#F1C40F"
-      value={newName}
-      onChangeText={setNewName}
+        style={styles.input}
+        placeholder="Enter name"
+        placeholderTextColor="#F1C40F"
+        value={newName}
+        onChangeText={setNewName}
       />
       <TextInput
         style={styles.input}
-        placeholder="Enter email" 
+        placeholder="Enter email"
         placeholderTextColor="#F1C40F"
         value={newEmail}
         onChangeText={setNewEmail}
         keyboardType="email-address"
       />
-      <Button 
+      <TextInput
+        style={styles.input}
+        placeholder="Enter password"
+        placeholderTextColor="#F1C40F"
+        value={newPassword}
+        onChangeText={setNewPassword}
+        secureTextEntry
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Confirm password"
+        placeholderTextColor="#F1C40F"
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        secureTextEntry
+      />
+      <Button
         title="Add User"
         onPress={addUser}
         color="#F1C40F"
