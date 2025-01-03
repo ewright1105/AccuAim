@@ -1,15 +1,16 @@
-// Login.tsx
 import React, { useLayoutEffect, useState } from 'react';
 import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router'; // For navigation
 import { useAuth } from './AuthContext'; // Import useAuth for authentication context
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState<string>(''); // Type the email state as a string
-  const [isLoading, setIsLoading] = useState<boolean>(false); // Add loading state
+  const [email, setEmail] = useState<string>(''); // Email state
+  const [password, setPassword] = useState<string>(''); // Password state
+  const [isLoading, setIsLoading] = useState<boolean>(false); // Loading state
   const { login } = useAuth(); // Use the login function from AuthContext
   const router = useRouter();
   const navigation = useNavigation();
+
   useLayoutEffect(() => {
     navigation.setOptions({
       title: "AccuAim",
@@ -27,9 +28,11 @@ const Login: React.FC = () => {
   // Handle login form submission
   const handleLogin = async () => {
     const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
 
-    if (!trimmedEmail) {
-      Alert.alert("Input Error", "Please enter a valid email.");
+    // Validate input
+    if (!trimmedEmail || !trimmedPassword) {
+      Alert.alert("Input Error", "Please enter both email and password.");
       return;
     }
 
@@ -38,7 +41,7 @@ const Login: React.FC = () => {
     try {
       const response = await fetch('http://127.0.0.1:4949/user/login', {
         method: 'POST',
-        body: JSON.stringify({ email: trimmedEmail }),
+        body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }), // Send both email and password
         headers: {
           'Content-Type': 'application/json',
         },
@@ -49,8 +52,9 @@ const Login: React.FC = () => {
       try {
         const parsedData = JSON.parse(data);
 
-        if (parsedData.message && parsedData.message === 'User not found') {
-          Alert.alert('Error', 'User not found or invalid credentials.');
+        // Check if user exists and password matches
+        if (parsedData.message && parsedData.message === 'Invalid credentials') {
+          Alert.alert('Error', 'Invalid email or password.');
         } else if (parsedData.id) {
           // Update the global auth context with user's data (name, email, id, etc.)
           login({ id: parsedData.id, email: parsedData.email, name: parsedData.name });
@@ -82,6 +86,15 @@ const Login: React.FC = () => {
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
+        placeholderTextColor="#F1C40F"
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Enter your password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry={true} // Hide the password text
         placeholderTextColor="#F1C40F"
       />
 

@@ -13,10 +13,10 @@ CREATE TABLE users (
 -- Insert test data into the users table
 INSERT INTO users (Email, FullName, PasswordHash)
 VALUES
-  ('john.doe@example.com', 'John Doe', '$2a$12$EVVpQjkwDqTQCk2JtKvZz.kPfn9TgtZEG1XVrW8vS1tqx8POA2F7C'),
-  ('jane.smith@example.com', 'Jane Smith', '$2a$12$EVVpQjkwDqTQCk2JtKvZz.kPfn9TgtZEG1XVrW8vS1tqx8POA2F7C'),
-  ('alice.jones@example.com', 'Alice Jones', '$2a$12$5oVxxkjogqfGv27lVQWISuoIbgL1P0mhVu0jcQoxFZoHZsTH27e5K'),
-  ('bob.white@example.com', 'Bob White', '$2a$12$7ECRX42XN6z6ql9h1Vml9ObcdqzAY0qZhNcZbyP/m7fXfohSxgMWu');
+  ('john.doe@example.com', 'John Doe', '$2b$12$wjAgXGbGsdYbHtENotwZYuZKSKRHyDcI6TUd6bcWNR4ev2/lkXYVe'),
+  ('jane.smith@example.com', 'Jane Smith', '$2b$12$KTpEIOgC0.3yD6siQjifl.lys8uKQjVltS3MjoxCr5UXd6GgJjMzy'),
+  ('alice.jones@example.com', 'Alice Jones', '$2b$12$HG6bF5bEBQb2hBhK0JTKCuHg5U28Xs1v0MQ6rHgIMpnQmEdTePVnu'),
+  ('bob.white@example.com', 'Bob White', '$2b$12$0FdZT.2lXjWgfyO3.RI2RVM9MqaNKP6tuJ0TgOk7gdTsmgW0IfI5.');
 
 CREATE TABLE practice_sessions (
     SessionID SERIAL PRIMARY KEY,

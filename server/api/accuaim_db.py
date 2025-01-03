@@ -1,4 +1,4 @@
-from db_utils import *
+from api.db_utils import *
 import re
 import bcrypt
 
@@ -522,7 +522,6 @@ def verify_user(email, password):
     """
     
     user = exec_get_one(sql, (email,))
-    
     if user and bcrypt.checkpw(password.encode('utf-8'), user[3].encode('utf-8')):
         return {
             "id": user[0],
