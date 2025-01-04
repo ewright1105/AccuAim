@@ -530,7 +530,7 @@ def verify_user(email, password):
         }
     return None
 
-def change_password(user_id, current_password, new_password):
+def change_password(UserID, current_password, new_password):
     """
     Changes a user's password.
 
@@ -549,7 +549,7 @@ def change_password(user_id, current_password, new_password):
     WHERE UserID = %s
     """
     
-    user = exec_get_one(sql, (user_id,))
+    user = exec_get_one(sql, (UserID,))
     
     if not user:
         return "Error: User not found."
@@ -570,7 +570,7 @@ def change_password(user_id, current_password, new_password):
     """
     
     try:
-        exec_commit(update_sql, (new_hash.decode('utf-8'), user_id))
+        exec_commit(update_sql, (new_hash.decode('utf-8'), UserID))
         return "Password successfully updated."
     except Exception as e:
         return f"An error occurred while updating the password: {e}"

@@ -12,7 +12,7 @@ export default function UserDetails() {
     timestamp: string;
   };
 
-  const { userId } = useLocalSearchParams(); // Retrieve the user ID from the route parameters
+  const { userId } = useLocalSearchParams();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,9 +24,16 @@ export default function UserDetails() {
   const [editedName, setEditedName] = useState("");
   const [editedEmail, setEditedEmail] = useState("");
 
-  const [password, setPassword] = useState(""); // Password field for delete confirmation
-  const [confirmPassword, setConfirmPassword] = useState(""); // Confirm password field for delete confirmation
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false); // Flag to show confirm password fields
+  // Password change states
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+
+  // Delete account states
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -72,6 +79,49 @@ export default function UserDetails() {
     setEditUser(null);
     setEditedName("");
     setEditedEmail("");
+  };
+
+  const cancelPasswordChange = () => {
+    setIsChangingPassword(false);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+  };
+
+  const handlePasswordChange = () => {
+    if (newPassword !== confirmNewPassword) {
+      Alert.alert("Password Mismatch", "New passwords do not match.");
+      return;
+    }
+  
+    if (newPassword.length < 8) {
+      Alert.alert("Invalid Password", "New password must be at least 8 characters long.");
+      return;
+    }
+  
+    fetch(`http://127.0.0.1:4949/user/${user?.id}/change-password`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.message?.includes("Error")) {
+          Alert.alert("Error", data.message);
+        } else {
+          Alert.alert("Success", "Password updated successfully");
+          cancelPasswordChange();
+        }
+      })
+      .catch((error) => {
+        console.error("Error changing password:", error);
+        Alert.alert("Error", "Failed to change password. Please try again.");
+      });
   };
 
   const updateUser = () => {
@@ -143,7 +193,7 @@ export default function UserDetails() {
       Alert.alert("Password Mismatch", "The passwords do not match.");
     } else {
       deleteUser(user!.id, password);
-      setIsConfirmingDelete(false); // Hide the confirm password fields
+      setIsConfirmingDelete(false);
     }
   };
 
@@ -189,6 +239,38 @@ export default function UserDetails() {
             <Text style={styles.detailText}>{user.timestamp}</Text>
           </View>
 
+          {/* Password Change Section */}
+          {isChangingPassword && (
+            <View style={styles.passwordChangeContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Current Password"
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                secureTextEntry
+                placeholderTextColor="#F1C40F"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="New Password"
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry
+                placeholderTextColor="#F1C40F"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm New Password"
+                value={confirmNewPassword}
+                onChangeText={setConfirmNewPassword}
+                secureTextEntry
+                placeholderTextColor="#F1C40F"
+              />
+              <Button title="Change Password" onPress={handlePasswordChange} color="#F1C40F" />
+              <Button title="Cancel" onPress={cancelPasswordChange} color="gray" />
+            </View>
+          )}
+
           {/* Editing user details */}
           {editUser && (
             <View style={styles.editContainer}>
@@ -212,8 +294,8 @@ export default function UserDetails() {
             </View>
           )}
 
-          {/* Buttons to Edit or Delete */}
-          {!editUser && (
+          {/* Action Buttons */}
+          {!editUser && !isChangingPassword && !isConfirmingDelete && (
             <>
               <Button
                 title="Edit User"
@@ -222,6 +304,11 @@ export default function UserDetails() {
                   setEditedName(user.name);
                   setEditedEmail(user.email);
                 }}
+                color="#F1C40F"
+              />
+              <Button
+                title="Change Password"
+                onPress={() => setIsChangingPassword(true)}
                 color="#F1C40F"
               />
               <Button title="Sign Out" onPress={() => router.push('/')} color="#F1C40F" />
@@ -287,6 +374,9 @@ const styles = StyleSheet.create({
     color: "#F1C40F",
   },
   editContainer: {
+    marginVertical: 20,
+  },
+  passwordChangeContainer: {
     marginVertical: 20,
   },
   input: {

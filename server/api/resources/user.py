@@ -12,13 +12,6 @@ class User(Resource):
     
     def put(self):
         data = request.get_json()
-        
-        # If password is being updated, change the password
-        if 'current_password' in data and 'new_password' in data:
-            result = change_password(data['UserID'], data['current_password'], data['new_password'])
-            return jsonify({"message": result})
-        
-        # Otherwise, update user details without password change
         result = update_user(data['UserID'], data['name'], data['email'])
         return jsonify({"message": result})
     
