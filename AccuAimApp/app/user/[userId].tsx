@@ -6,7 +6,7 @@ import { useAuth } from "../AuthContext";
 
 export default function UserDetails() {
   type User = {
-    id: number;
+    UserID: number;
     email: string;
     name: string;
     timestamp: string;
@@ -59,7 +59,7 @@ export default function UserDetails() {
       if (data && data.length > 0) {
         const userData = data;
         setUser({
-          id: userData[0],
+          UserID: userData[0],
           email: userData[1],
           name: userData[2],
           timestamp: userData[3],
@@ -89,6 +89,11 @@ export default function UserDetails() {
   };
 
   const handlePasswordChange = () => {
+    if (!user) {
+      Alert.alert("Error", "User information is missing.");
+      return;
+    }
+  
     if (newPassword !== confirmNewPassword) {
       Alert.alert("Password Mismatch", "New passwords do not match.");
       return;
@@ -99,30 +104,36 @@ export default function UserDetails() {
       return;
     }
   
-    fetch(`http://127.0.0.1:4949/user/${user?.id}/change-password`, {
+    // Proceed with the API call to change the password
+    fetch(`http://127.0.0.1:4949/user/${user.UserID}/change-password`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         current_password: currentPassword,
-        new_password: newPassword
+        new_password: newPassword,
       }),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        return response.json();  // Only parse the JSON if the response is ok
+      })
       .then((data) => {
-        if (data.message?.includes("Error")) {
-          Alert.alert("Error", data.message);
+        // Check for errors in the response data
+        if (data?.includes("Error")) {
+          Alert.alert("Oops!", data || "An unexpected error occurred.");
         } else {
           Alert.alert("Success", "Password updated successfully");
-          cancelPasswordChange();
+          cancelPasswordChange();  // Assuming this resets or closes the password change form
         }
       })
       .catch((error) => {
         console.error("Error changing password:", error);
-        Alert.alert("Error", "Failed to change password. Please try again.");
+        Alert.alert("Error", error.message || "Failed to change password. Please try again.");
       });
   };
+  
+  
 
   const updateUser = () => {
     if (editUser) {
@@ -130,10 +141,10 @@ export default function UserDetails() {
       const email = editedEmail.trim();
 
       if (name && email) {
-        fetch("http://127.0.0.1:4949/", {
+        fetch(`http://127.0.0.1:4949/user/${userId}`, {
           method: "PUT",
           body: JSON.stringify({
-            UserID: editUser.id,
+            UserID: editUser.UserID,
             name,
             email,
           }),
@@ -144,8 +155,9 @@ export default function UserDetails() {
           .then((response) => response.text())
           .then((data) => {
             if (data.includes("Error")) {
+              
               data = data.replace('"', "").replace('."', '.');
-              Alert.alert("An Error has Occured!", data);
+              Alert.alert("Oops!", data);
             } else {
               updateUserName(name);
               fetchUserDetails(userId);
@@ -163,7 +175,7 @@ export default function UserDetails() {
   };
 
   const deleteUser = (id: number, password: string) => {
-    fetch("http://127.0.0.1:4949/", {
+    fetch(`http://127.0.0.1:4949/user/${userId}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -178,9 +190,10 @@ export default function UserDetails() {
         data.trim('"', '');
         data.trim('."', '');
         if (data.includes('Error')) {
-          Alert.alert("Error Deleting User", data);
+          Alert.alert("Oops!", data);
         } else {
           router.push('/');
+          setIsConfirmingDelete(false);
         }
       })
       .catch((error) => {
@@ -192,8 +205,7 @@ export default function UserDetails() {
     if (password !== confirmPassword) {
       Alert.alert("Password Mismatch", "The passwords do not match.");
     } else {
-      deleteUser(user!.id, password);
-      setIsConfirmingDelete(false);
+      deleteUser(user!.UserID, password);
     }
   };
 
@@ -221,7 +233,7 @@ export default function UserDetails() {
         <View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>ID:</Text>
-            <Text style={styles.detailText}>{user.id}</Text>
+            <Text style={styles.detailText}>{user.UserID}</Text>
           </View>
 
           <View style={styles.detailRow}>
@@ -290,7 +302,7 @@ export default function UserDetails() {
                 placeholderTextColor="#F1C40F"
               />
               <Button title="Update User" onPress={updateUser} color="#F1C40F" />
-              <Button title="Cancel" onPress={cancelEdit} color="red" />
+              <Button title="Cancel" onPress={cancelEdit} color="gray" />
             </View>
           )}
 

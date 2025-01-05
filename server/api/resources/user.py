@@ -10,13 +10,13 @@ class User(Resource):
         user = get_user(UserID)
         return jsonify(user)
     
-    def put(self):
+    def put(self, UserID):
         data = request.get_json()
-        result = update_user(data['UserID'], data['name'], data['email'])
-        return jsonify({"message": result})
+        result = update_user(UserID, data['name'], data['email'])
+        return jsonify(result)
     
-    def delete(self):
+    def delete(self, UserID):
         data = request.get_json()
-        result = remove_user(data["UserID"],data["password"])
+        result = remove_user(UserID,data["password"])
         return jsonify(result)
         

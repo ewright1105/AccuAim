@@ -16,8 +16,8 @@ const LandingScreen: React.FC = () => {
             headerRight: () => (
                 // Conditionally render the settings icon only if 'user' is not null
                 user ? (
-                <TouchableOpacity onPress={() => router.push(`/user/${user.id}`)}>
-                    <Ionicons name="settings-outline" size={28} color="#F1C40F" />
+                <TouchableOpacity onPress={() => router.push(`/user/${user.UserID}`)}>
+                    <Ionicons name="person-outline" size={28} color="#F1C40F" />
                 </TouchableOpacity>
                 ) : null
             ),
@@ -50,7 +50,13 @@ const LandingScreen: React.FC = () => {
             <>
             {/* Display the user's name in the welcome message */}
             <Text style={styles.title}>Welcome, {user.name}!</Text>
-            <Button title="Your Sessions" onPress={() => router.push('/UserSessions')} color="#F1C40F" />
+            <TouchableOpacity 
+                        style={styles.sessionsButton}
+                        onPress={() => router.push('/UserSessions')}
+                    >
+                        <Ionicons name="calendar-outline" size={20} color="#121212" style={styles.icon} />
+                        <Text style={styles.buttonText}>Your Sessions</Text>
+                    </TouchableOpacity>
             </>
         ) : (
             <Text style={styles.subtitle}>You need to be logged in to view this page.</Text>
@@ -77,6 +83,23 @@ const LandingScreen: React.FC = () => {
         fontSize: 18,
         color: '#B0B0B0',
         marginBottom: 40,
+    },
+    sessionsButton: {
+        backgroundColor: '#F1C40F',
+        paddingVertical: 15,
+        paddingHorizontal: 30,
+        borderRadius: 8,
+        marginTop: 20,
+        flexDirection: 'row', // Align icon and text horizontally
+        alignItems: 'center',
+    },
+    icon: {
+        marginRight: 10, // Space between the icon and text
+    },
+    buttonText: {
+        color: '#121212',
+        fontSize: 18,
+        fontWeight: 'bold',
     },
     });
 

@@ -14,7 +14,7 @@ export default function Index() {
   return (
     <View style={styles.container}>
       <Image
-        source={require("/Users/evanwright/personal projects/AccuAim/AccuAimApp/assets/images/Screenshot 2024-12-30 at 6.45.08 PM.png")} // Adjust this path to match your logo file location
+        source={require("/Users/evanwright/personal-projects/AccuAim/AccuAimApp/assets/images/Screenshot 2024-12-30 at 6.45.08 PM.png")} // Adjust this path to match your logo file location
         style={styles.logo}
         resizeMode="contain"
       />

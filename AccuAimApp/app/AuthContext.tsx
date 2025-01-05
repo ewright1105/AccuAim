@@ -1,9 +1,8 @@
-// AuthContext.tsx
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
 // Define the type for the user object
 interface User {
-  id: string;
+  UserID: string;
   email: string;
   name: string;
 }

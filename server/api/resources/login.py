@@ -7,23 +7,13 @@ from api.db_utils import *
 
 class Login(Resource):
     def post(self):
-        # Get the JSON data from the request
         data = request.get_json()
-        email = data.get("email")
-        password = data.get("password")
         
-        # Validate input
-        if not email:
+        if not data["email"]:
             return jsonify({"message": "Email is required"})
-        if not password:
+        if not data["password"]:
             return jsonify({"message": "Password is required"})
         
-        # Fetch user by email
-        user = verify_user(email,password)
-        print(user)
+        user = login(data["email"],data["password"])
         
-        if user:
-            return user
-        else:
-            # If password does not match, return error message
-            return jsonify({"message": "Invalid credentials"})
+        return user

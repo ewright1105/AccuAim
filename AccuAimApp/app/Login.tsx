@@ -41,39 +41,30 @@ const Login: React.FC = () => {
     try {
       const response = await fetch('http://127.0.0.1:4949/user/login', {
         method: 'POST',
-        body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }), // Send both email and password
+        body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
         headers: {
           'Content-Type': 'application/json',
         },
       });
-
-      const data = await response.text();
-
-      try {
-        const parsedData = JSON.parse(data);
-
-        // Check if user exists and password matches
-        if (parsedData.message && parsedData.message === 'Invalid credentials') {
-          Alert.alert('Error', 'Invalid email or password.');
-        } else if (parsedData.id) {
-          // Update the global auth context with user's data (name, email, id, etc.)
-          login({ id: parsedData.id, email: parsedData.email, name: parsedData.name });
-
-          // Navigate to the Landing screen after successful login
-          router.push('/LandingScreen');
-        } else {
-          Alert.alert('Error', 'Invalid response from server.');
-        }
-      } catch (error) {
-        console.error('Error parsing JSON response:', error);
-        Alert.alert('Error', 'An unexpected error occurred.');
+      const data = await response.json();
+    
+      console.log(data);
+    
+      if (data == null || data.message === 'Invalid credentials') {
+        Alert.alert("Error", "Invalid email or password. Please try again.");
+      } else if (data.UserID) {
+        login({UserID: data.UserID, email: data.email, name: data.name });
+        router.push('/LandingScreen');
+      } else {
+        Alert.alert('Error', 'Invalid response from server.');
       }
     } catch (error) {
       console.error('Error checking user:', error);
       Alert.alert('Error', 'An error occurred while checking the user. Please try again.');
     } finally {
-      setIsLoading(false); // Reset loading state after request
+      setIsLoading(false);
     }
+    
   };
 
   return (

@@ -75,7 +75,7 @@ class TestAccuaim (unittest.TestCase):
         self.assertEqual(len(unmodified_users) + 1, len(modified_users))
         
         # Verify user was created with correct credentials
-        verify_result = verify_user("test@gmail.com", "SecurePass123!")
+        verify_result = login("test@gmail.com", "SecurePass123!")
         self.assertIsNotNone(verify_result)
         self.assertEqual("Test User", verify_result["name"])
         
@@ -87,21 +87,21 @@ class TestAccuaim (unittest.TestCase):
         invalid_email_result = create_user("invalid-email", "Invalid User", "Pass123!")
         self.assertEqual(invalid_email_result, "Error: The entered email is not in the correct format.")
         
-    def test_verify_user(self):
+    def test_login(self):
         # Create a test user
         create_user("verify@test.com", "Verify User", "TestPass123!")
         
         # Test correct password
-        result = verify_user("verify@test.com", "TestPass123!")
+        result = login("verify@test.com", "TestPass123!")
         self.assertIsNotNone(result)
         self.assertEqual("Verify User", result["name"])
         
         # Test incorrect password
-        result = verify_user("verify@test.com", "WrongPass123!")
+        result = login("verify@test.com", "WrongPass123!")
         self.assertIsNone(result)
         
         # Test non-existent user
-        result = verify_user("nonexistent@test.com", "TestPass123!")
+        result = login("nonexistent@test.com", "TestPass123!")
 
     def test_get_user_id(self):
         user_exists_results = get_user_id("bob.white@example.com")
@@ -125,7 +125,7 @@ class TestAccuaim (unittest.TestCase):
         self.assertTrue("successfully updated" in result)
         
         # Verify new password works
-        verify_result = verify_user("new.update@test.com", "NewPass123!")
+        verify_result = login("new.update@test.com", "NewPass123!")
         self.assertIsNotNone(verify_result)
         
         # Test updating with incorrect current password
@@ -143,7 +143,7 @@ class TestAccuaim (unittest.TestCase):
         self.assertEqual(result, "Password successfully updated.")
         
         # Verify new password works
-        verify_result = verify_user("password@test.com", "NewPass123!")
+        verify_result = login("password@test.com", "NewPass123!")
         self.assertIsNotNone(verify_result)
         
         # Test with incorrect current password

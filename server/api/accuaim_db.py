@@ -361,7 +361,7 @@ def is_valid_email(email):
         return False
 
 
-def update_user(user_id, new_name, new_email, current_password=None, new_password=None):
+def update_user(user_id, new_name, new_email):
     """
     Updates a user's information and optionally their password.
 
@@ -396,34 +396,14 @@ def update_user(user_id, new_name, new_email, current_password=None, new_passwor
         return "Error: User does not exist."
 
     try:
-        if new_password:
-            # Verify current password before allowing password change
-            if not current_password:
-                return "Error: Current password required to set new password."
+        # Update without changing password
+        sql = """
+            UPDATE users 
+            SET FullName = %s, email = %s
+            WHERE UserID = %s
+        """
+        exec_commit(sql, (new_name, new_email, user_id))
                 
-            if not bcrypt.checkpw(current_password.encode('utf-8'), 
-                                user[3].encode('utf-8')):  # Assuming PasswordHash is at index 3
-                return "Error: Current password is incorrect."
-                
-            # Hash the new password
-            salt = bcrypt.gensalt()
-            new_hash = bcrypt.hashpw(new_password.encode('utf-8'), salt)
-            
-            sql = """
-                UPDATE users 
-                SET FullName = %s, email = %s, PasswordHash = %s
-                WHERE UserID = %s
-            """
-            exec_commit(sql, (new_name, new_email, new_hash.decode('utf-8'), user_id))
-        else:
-            # Update without changing password
-            sql = """
-                UPDATE users 
-                SET FullName = %s, email = %s
-                WHERE UserID = %s
-            """
-            exec_commit(sql, (new_name, new_email, user_id))
-            
         return f"User successfully updated: Name = {new_name}, Email = {new_email}"
     except Exception as e:
         return f"An error occurred while updating the user: {e}"
@@ -449,7 +429,7 @@ def get_user_by_email(email):
     
     if user:
         # Return a dictionary with the user's details
-        return {"id": user[0], "name": user[1], "email": user[2]}
+        return {"UserID": user[0], "name": user[1], "email": user[2]}
     
     return None  # Return None if no user is found
 
@@ -504,7 +484,7 @@ def get_session_data(user_id, session_id):
     }
     
     return session_data
-def verify_user(email, password):
+def login(email, password):
     """
     Verifies a user's credentials.
 
@@ -523,11 +503,7 @@ def verify_user(email, password):
     
     user = exec_get_one(sql, (email,))
     if user and bcrypt.checkpw(password.encode('utf-8'), user[3].encode('utf-8')):
-        return {
-            "id": user[0],
-            "email": user[1],
-            "name": user[2]
-        }
+        return {"UserID": user[0], "email": user[1],"name": user[2]}
     return None
 
 def change_password(UserID, current_password, new_password):

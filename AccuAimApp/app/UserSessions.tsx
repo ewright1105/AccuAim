@@ -34,7 +34,7 @@ export default function UserSessions() {
   // Fetch user sessions when the user is logged in
   useEffect(() => {
     if (user) {
-      fetchUserSessions(user.id); // Fetch sessions using the logged-in user's ID
+      fetchUserSessions(user.UserID); // Fetch sessions using the logged-in user's ID
     } else {
       setError("User not logged in");
       setLoading(false);

@@ -50,7 +50,7 @@ export default function SessionDetails() {
 
   useEffect(() => {
     if (user && sessionId) {
-      fetchSessionData(Number(user.id), sessionId); 
+      fetchSessionData(Number(user.UserID), sessionId); 
     } else {
       setError("User not logged in or invalid session ID.");
       setLoading(false);
