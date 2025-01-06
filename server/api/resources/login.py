@@ -1,6 +1,5 @@
 from flask import jsonify
 from flask_restful import Resource, request
-import bcrypt  # for password hashing and comparison
 
 from api.accuaim_db import *
 from api.db_utils import *

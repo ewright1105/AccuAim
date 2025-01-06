@@ -1,7 +1,18 @@
-DROP TABLE IF EXISTS users, practice_sessions, shots; 
-DROP TYPE IF EXISTS shot_result;
+DROP TABLE IF EXISTS users, practice_sessions, shots, target_areas, blocks; 
+DROP TYPE IF EXISTS shot_result, target_area;
 
 CREATE TYPE shot_result AS ENUM ('Made', 'Missed');
+
+CREATE TYPE target_area AS ENUM (
+  'Top Right', 
+  'Top Left', 
+  'Bottom Right', 
+  'Bottom Left', 
+  'Crossbar', 
+  'Right Pipe', 
+  'Left Pipe', 
+  'Five Hole'
+);
 
 CREATE TABLE users (
     UserID SERIAL PRIMARY KEY,
@@ -52,19 +63,37 @@ CREATE TABLE shots (
     ShotPositionX DECIMAL(10, 2) NOT NULL,
     ShotPositionY DECIMAL(10, 2) NOT NULL,
     Result shot_result NOT NULL,
+    BlockID INT,
     FOREIGN KEY (SessionID) REFERENCES practice_sessions(SessionID)
 );
 -- Insert test data with randomized shot positions for all 14 sessions
-INSERT INTO shots (SessionID, ShotPositionX, ShotPositionY, Result)
+INSERT INTO shots (SessionID, ShotPositionX, ShotPositionY, Result, BlockID)
 SELECT 
   SessionID,
   ShotPositionX,
   ShotPositionY,
   CASE 
-  WHEN ShotPositionX >= 0 AND ShotPositionX <= 5.8 --made it 5.8 to account for pup\\
-   AND ShotPositionY >= 0 AND ShotPositionY <= 5.8 THEN 'Made'::shot_result
-  ELSE 'Missed'::shot_result
-END as Result
+    WHEN ShotPositionX >= 0 AND ShotPositionX <= 5.8 --made it 5.8 to account for pup\\
+    AND ShotPositionY >= 0 AND ShotPositionY <= 5.8 THEN 'Made'::shot_result
+    ELSE 'Missed'::shot_result
+  END as Result,
+  CASE 
+    WHEN SessionID = 1 THEN 1  -- Block 1 (Top Right) for Session 1
+    WHEN SessionID = 2 THEN 2  -- Block 2 (Bottom Left) for Session 2
+    WHEN SessionID = 3 THEN 3  -- Block 3 (Five Hole) for Session 3
+    WHEN SessionID = 4 THEN 1  -- Block 1 (Top Right) for Session 4
+    WHEN SessionID = 5 THEN 2  -- Block 2 (Bottom Left) for Session 5
+    WHEN SessionID = 6 THEN 3  -- Block 3 (Five Hole) for Session 6
+    WHEN SessionID = 7 THEN 1  -- Block 1 (Top Right) for Session 7
+    WHEN SessionID = 8 THEN 2  -- Block 2 (Bottom Left) for Session 8
+    WHEN SessionID = 9 THEN 3  -- Block 3 (Five Hole) for Session 9
+    WHEN SessionID = 10 THEN 1 -- Block 1 (Top Right) for Session 10
+    WHEN SessionID = 11 THEN 2 -- Block 2 (Bottom Left) for Session 11
+    WHEN SessionID = 12 THEN 3 -- Block 3 (Five Hole) for Session 12
+    WHEN SessionID = 13 THEN 1 -- Block 1 (Top Right) for Session 13
+    WHEN SessionID = 14 THEN 2 -- Block 2 (Bottom Left) for Session 14
+    ELSE 1  -- Default Block ID (add more cases as needed)
+  END as BlockID
 FROM (
   -- Session 1 (4 shots)
   SELECT 1 as SessionID, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2) as ShotPositionX, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2) as ShotPositionY
@@ -157,3 +186,40 @@ FROM (
   UNION ALL SELECT 14, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2)
   UNION ALL SELECT 14, ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2), ROUND(CAST(RANDOM() * 6 + 1 AS numeric), 2)
 ) AS shots_data;
+
+CREATE TABLE blocks (
+  BlockID SERIAL PRIMARY KEY,
+  SessionID INT NOT NULL,
+  TargetArea target_area NOT NULL,
+  ShotsToTake INT NOT NULL, 
+  FOREIGN KEY (SessionID) REFERENCES practice_sessions(SessionID)
+  );
+-- Insert test data into the blocks table
+INSERT INTO blocks (SessionID, TargetArea, ShotsToTake)
+VALUES
+  -- Block 1 for Session 1
+  (1, 'Top Right', 4),  -- Session 1, Top Right (4 shots)
+  
+  -- Block 2 for Session 2
+  (2, 'Bottom Left', 5),  -- Session 2, Bottom Left (5 shots)
+  
+  -- Block 3 for Session 3
+  (3, 'Five Hole', 6),  -- Session 3, Five Hole (6 shots)
+  
+  -- Block 1 for Session 4
+  (4, 'Top Right', 5),  -- Session 4, Top Right (5 shots)
+  
+  -- Block 2 for Session 5
+  (5, 'Bottom Left', 4),  -- Session 5, Bottom Left (4 shots)
+  
+  -- Block 3 for Session 6
+  (6, 'Five Hole', 5),  -- Session 6, Five Hole (5 shots)
+  
+  -- Block 1 for Session 7
+  (7, 'Top Right', 6),  -- Session 7, Top Right (6 shots)
+  
+  -- Block 2 for Session 8
+  (8, 'Bottom Left', 7),  -- Session 8, Bottom Left (7 shots)
+  
+  -- Block 3 for Session 9
+  (9, 'Five Hole', 8);  -- Session 9, Five Hole (8 shots)

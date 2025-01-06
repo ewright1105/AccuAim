@@ -118,7 +118,7 @@ def record_new_shot(session_id, shot_time, shot_position_x, shot_position_y, res
     # Execute the insert query with the provided parameters
     try:
         # Call exec_get_all to execute the insert query
-        exec_get_all(sql, (session_id, shot_time, shot_position_x, shot_position_y, result))
+        exec_commit(sql, (session_id, shot_time, shot_position_x, shot_position_y, result))
         return "Shot recorded successfully."
     except Exception as e:
         return f"An error occurred while recording the shot: {e}"
@@ -551,13 +551,53 @@ def change_password(UserID, current_password, new_password):
     except Exception as e:
         return f"An error occurred while updating the password: {e}"
 
+def get_all_blocks():
+    """
+    Retrieves the all blocks from database.
+
+    Returns:
+        array: A dictionary containing blocks and relevant details.
+    """
+    sql = """
+    SELECT *
+    FROM blocks
+    """
     
+    result = exec_get_all(sql)
+    
+    return result
+
+def get_target_area_for_block(block_id):
+    """
+    Retrieves the target area associated with a specific block.
+
+    Args:
+        block_id (int): The ID of the block to retrieve the target area for.
+
+    Returns:
+        dict: A dictionary containing block and target area details.
+    """
+    sql = """
+    SELECT b.BlockID, ta.AreaName
+    FROM blocks b
+    JOIN target_areas ta ON b.TargetAreaID = ta.TargetAreaID
+    WHERE b.BlockID = %s;
+    """
+    
+    result = exec_get_one(sql, (block_id,))
+    
+    if result:
+        return {"BlockID": result[0], "TargetArea": result[1]}
+    return {"error": "Block not found or has no associated target area."}
+
+
+
     
     
 if __name__ == "__main__":
     rebuild_tables()
     print(create_user("test@example.com", "John Doe"))
     print(create_user("invalid-email", "John Doe"))
-    print(create_user("test@example.com", "Jane Doe"))
+    print(create_user("test@example.com", "Jane Doe")) 
 
 
