@@ -30,79 +30,102 @@ def get_user_sessions(user_id):
     
 def get_session_shots(session_id):
     """
-    Gets all shots for a given session ID from the database.
+    Gets all shots for a given session ID by retrieving shots from all blocks in the session.
 
     Args:
-        session_id (int): The session ID to fetch made shots for.
+        session_id (int): The session ID to fetch shots for.
 
     Returns:
-        list: A list of tuples containing shot details.
+        list: A list of dictionaries containing shot details with block information.
     """
     sql = """
-    SELECT ShotID, SessionID, ShotTime, ShotPositionX, ShotPositionY, Result
-    FROM shots
-    WHERE SessionID = %s;
+    SELECT s.ShotID, s.BlockID, s.ShotTime, s.ShotPositionX, s.ShotPositionY, s.Result, 
+           b.TargetArea, b.BlockOrder
+    FROM shots s
+    JOIN blocks b ON s.BlockID = b.BlockID
+    WHERE b.SessionID = %s
+    ORDER BY b.BlockOrder, s.ShotTime;
     """
     result = exec_get_all(sql, (session_id,))
-    all_shots = [
+    return [
         {
             'ShotID': shot[0],
-            'SessionID': shot[1],
-            'ShotTime': shot[2],  # Make sure this is in the correct format, e.g., ISO string
+            'BlockID': shot[1],
+            'ShotTime': shot[2],
+            'ShotPositionX': shot[3],
+            'ShotPositionY': shot[4],
+            'Result': shot[5],
+            'TargetArea': shot[6],
+            'BlockOrder': shot[7]
+        }
+        for shot in result
+    ]
+
+def get_block_made_shots(block_id):
+    """
+    Gets all made shots for a given block ID from the database.
+
+    Args:
+        block_id (int): The block ID to fetch made shots for.
+
+    Returns:
+        list: A list of dictionaries containing made shot details.
+    """
+    sql = """
+    SELECT ShotID, BlockID, ShotTime, ShotPositionX, ShotPositionY, Result
+    FROM shots
+    WHERE BlockID = %s AND Result = 'Made'
+    ORDER BY ShotTime;
+    """
+    result = exec_get_all(sql, (block_id,))
+    return [
+        {
+            'ShotID': shot[0],
+            'BlockID': shot[1],
+            'ShotTime': shot[2],
             'ShotPositionX': shot[3],
             'ShotPositionY': shot[4],
             'Result': shot[5]
         }
         for shot in result
     ]
-    return all_shots
 
-def get_session_made_shots(session_id):
+def get_block_missed_shots(block_id):
     """
-    Gets all made shots for a given session ID from the database.
+    Gets all missed shots for a given block ID from the database.
 
     Args:
-        session_id (int): The session ID to fetch made shots for.
+        block_id (int): The block ID to fetch missed shots for.
 
     Returns:
-        list: A list of tuples containing made shot details.
+        list: A list of dictionaries containing missed shot details.
     """
     sql = """
-    SELECT ShotID, SessionID, ShotTime, ShotPositionX, ShotPositionY, Result
+    SELECT ShotID, BlockID, ShotTime, ShotPositionX, ShotPositionY, Result
     FROM shots
-    WHERE SessionID = %s AND Result = 'Made';
+    WHERE BlockID = %s AND Result = 'Missed'
+    ORDER BY ShotTime;
     """
-    result = exec_get_all(sql, (session_id,))
-    
-    return result
+    result = exec_get_all(sql, (block_id,))
+    return [
+        {
+            'ShotID': shot[0],
+            'BlockID': shot[1],
+            'ShotTime': shot[2],
+            'ShotPositionX': shot[3],
+            'ShotPositionY': shot[4],
+            'Result': shot[5]
+        }
+        for shot in result
+    ]
 
-
-def get_session_missed_shots(session_id):
+def record_new_shot(block_id, shot_time, shot_position_x, shot_position_y, result):
     """
-    Retrieves all missed shots for a given session ID from the database.
+    Records a new shot in the database for a given block.
 
     Args:
-        session_id (int): The session ID to fetch missed shots for.
-
-    Returns:
-        list: A list of tuples containing missed shot details.
-    """
-    sql = """
-    SELECT ShotID, SessionID, ShotTime, ShotPositionX, ShotPositionY, Result
-    FROM shots
-    WHERE SessionID = %s AND Result = 'Missed';
-    """
-    result = exec_get_all(sql, (session_id,))
-    
-    return result
-
-def record_new_shot(session_id, shot_time, shot_position_x, shot_position_y, result):
-    """
-    Records a new shot in the database for a given session.
-
-    Args:
-        session_id (int): The session ID to associate the shot with.
-        shot_time (str): The timestamp when the shot was taken (e.g., '2024-12-01 10:15:00').
+        block_id (int): The block ID to associate the shot with.
+        shot_time (str): The timestamp when the shot was taken.
         shot_position_x (float): The X coordinate of the shot.
         shot_position_y (float): The Y coordinate of the shot.
         result (str): The result of the shot, either 'Made' or 'Missed'.
@@ -111,36 +134,32 @@ def record_new_shot(session_id, shot_time, shot_position_x, shot_position_y, res
         str: Success or error message.
     """
     sql = """
-    INSERT INTO shots (SessionID, ShotTime, ShotPositionX, ShotPositionY, Result)
+    INSERT INTO shots (BlockID, ShotTime, ShotPositionX, ShotPositionY, Result)
     VALUES (%s, %s, %s, %s, %s);
     """
-    
-    # Execute the insert query with the provided parameters
     try:
-        # Call exec_get_all to execute the insert query
-        exec_commit(sql, (session_id, shot_time, shot_position_x, shot_position_y, result))
+        exec_commit(sql, (block_id, shot_time, shot_position_x, shot_position_y, result))
         return "Shot recorded successfully."
     except Exception as e:
         return f"An error occurred while recording the shot: {e}"
     
-def calculate_session_accuracy(session_id):
+def calculate_block_accuracy(block_id):
     """
-    Retrieves the number of made and total shots of the given session from the database 
-    and calculates shooting percentage.
+    Calculates shooting percentage for a specific block.
 
     Args:
-        session_id (int): The session ID to fetch missed shots for.
+        block_id (int): The block ID to calculate accuracy for.
 
     Returns:
-        str: formatted string of shooting percentage for the given session.
+        str: Formatted string of shooting percentage for the given block.
     """
-    num_made_shots = len(get_session_made_shots(session_id))
-    total_shots = len(get_session_shots(session_id))
+    made_shots = get_block_made_shots(block_id)
+    all_shots = get_block_shots(block_id)
     
-    if total_shots == 0:
-        return "0.00%"  # Avoid division by zero if no shots are recorded
+    if not all_shots:
+        return "0.00%"
     
-    shooting_pct = (num_made_shots / total_shots) * 100
+    shooting_pct = (len(made_shots) / len(all_shots)) * 100
     return f"{shooting_pct:.2f}%"
 
 def reorder_shots(session_id):
@@ -175,35 +194,37 @@ def reorder_shots(session_id):
         return f"An error occurred while reordering shots: {e}"
 
 
-def remove_shot(user_id, session_id, shot_id):
+def remove_shot(user_id, shot_id):
     """
-    Removes the given shot from the specified session.
+    Removes the given shot after verifying user ownership.
 
     Args:
         user_id (int): The user ID requesting the removal.
-        session_id (int): The session ID to which the shot belongs.
         shot_id (int): The ID of the shot to be removed.
 
     Returns:
         str: Success or error message.
     """
-    # Check if the session belongs to the user
-    user_sessions = get_user_sessions(user_id)
+    # Verify that the shot belongs to a block in a session owned by the user
+    ownership_sql = """
+    SELECT s.ShotID
+    FROM shots s
+    JOIN blocks b ON s.BlockID = b.BlockID
+    JOIN practice_sessions ps ON b.SessionID = ps.SessionID
+    WHERE s.ShotID = %s AND ps.UserID = %s;
+    """
     
-    # Check if the session_id exists for this user
-    for session in user_sessions:
-        if session[0] == session_id:  # assuming session[0] is session_id
-            # Session found, proceed to remove the shot
-            remove_sql = "DELETE FROM shots WHERE shots.ShotID = %s"
-            try:
-                exec_commit(remove_sql, (shot_id,))
-                reorder_shots(session_id)
-                return "Shot successfully removed."
-            except Exception as e:
-                return f"An error occurred while trying to remove the shot: {e}"
+    shot_exists = exec_get_one(ownership_sql, (shot_id, user_id))
     
-    # If session_id was not found for the user
-    return "Error: The specified session does not belong to the user."
+    if not shot_exists:
+        return "Error: Shot not found or you don't have permission to remove it."
+    
+    try:
+        remove_sql = "DELETE FROM shots WHERE ShotID = %s"
+        exec_commit(remove_sql, (shot_id,))
+        return "Shot successfully removed."
+    except Exception as e:
+        return f"An error occurred while trying to remove the shot: {e}"
 
 def get_all_users():
     """
@@ -432,6 +453,24 @@ def get_user_by_email(email):
         return {"UserID": user[0], "name": user[1], "email": user[2]}
     
     return None  # Return None if no user is found
+def get_session_blocks(session_id):
+    """_summary_
+    Retrives raw block data for all blocks under given session
+
+    Args:
+        session_id (int): session id for session to retreive blocks for
+        
+    Returns:
+        list: a list containing all blocks and their relevant data
+    """
+    sql = """
+    SELECT *
+    FROM blocks
+    WHERE SessionID = %s"""
+    
+    session_blocks = exec_get_all(sql, (session_id),)
+    
+    return session_blocks
 
 def get_session_data(user_id, session_id):
     """
@@ -457,15 +496,21 @@ def get_session_data(user_id, session_id):
         # If session doesn't belong to the user, return an error message
         return {"error": "This session does not belong to the user or does not exist."}
     
+    block_stats = get_session_block_stats(session_id)
+    all_shots = []
+    total_shots = 0
+    made_shots_count = 0
+    missed_shots_count = 0
+    
     # Get all shots for the session
-    all_shots = get_session_shots(session_id)
-    made_shots = get_session_made_shots(session_id)
-    missed_shots = get_session_missed_shots(session_id)
+    for block in block_stats:
+       total_shots += block['ShotsPlanned']
+       made_shots_count += block['MadeShots']
+       missed_shots_count += block ['MissedShots']
+       all_shots.append(get_block_shots(block['BlockID']))
+       
     
-    total_shots = len(all_shots)
-    made_shots_count = len(made_shots)
-    missed_shots_count = len(missed_shots)
-    
+ 
     # Calculate shooting percentage (handle division by zero)
     if total_shots == 0:
         shooting_percentage = 0.0
@@ -591,13 +636,71 @@ def get_target_area_for_block(block_id):
     return {"error": "Block not found or has no associated target area."}
 
 
+def get_block_shots(block_id):
+    """
+    Gets all shots for a given block ID from the database.
 
-    
+    Args:
+        block_id (int): The block ID to fetch shots for.
+
+    Returns:
+        list: A list of dictionaries containing shot details.
+    """
+    sql = """
+    SELECT ShotID, BlockID, ShotTime, ShotPositionX, ShotPositionY, Result
+    FROM shots
+    WHERE BlockID = %s
+    ORDER BY ShotTime;
+    """
+    result = exec_get_all(sql, (block_id,))
+    return [
+        {
+            'ShotID': shot[0],
+            'BlockID': shot[1],
+            'ShotTime': shot[2],
+            'ShotPositionX': shot[3],
+            'ShotPositionY': shot[4],
+            'Result': shot[5]
+        }
+        for shot in result
+    ]
+def get_session_block_stats(session_id):
+    """
+    Gets shooting statistics for each block in a session, focusing on made, missed, and planned shots.
+
+    Args:
+        session_id (int): The session ID to get block stats for.
+
+    Returns:
+        list: A list of dictionaries containing block statistics.
+    """
+    sql = """
+    SELECT 
+        b.BlockID,
+        b.TargetArea,
+        b.ShotsPlanned,
+        SUM(CASE WHEN s.Result = 'Made' THEN 1 ELSE 0 END) as MadeShots,
+        SUM(CASE WHEN s.Result = 'Missed' THEN 1 ELSE 0 END) as MissedShots
+    FROM blocks b
+    LEFT JOIN shots s ON b.BlockID = s.BlockID
+    WHERE b.SessionID = %s
+    GROUP BY b.BlockID, b.TargetArea, b.ShotsPlanned
+    ORDER BY b.BlockOrder;
+    """
+    result = exec_get_all(sql, (session_id,))
+    return [
+        {
+            'BlockID': block[0],
+            'TargetArea': block[1],
+            'ShotsPlanned': block[2],
+            'MadeShots': block[3],
+            'MissedShots': block[4]
+        }
+        for block in result
+    ]
+
     
 if __name__ == "__main__":
     rebuild_tables()
-    print(create_user("test@example.com", "John Doe"))
-    print(create_user("invalid-email", "John Doe"))
-    print(create_user("test@example.com", "Jane Doe")) 
-
+    print(get_session_data(1,1))
 
