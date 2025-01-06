@@ -48,8 +48,6 @@ const Login: React.FC = () => {
       });
       const data = await response.json();
     
-      console.log(data);
-    
       if (data == null || data.message === 'Invalid credentials') {
         Alert.alert("Error", "Invalid email or password. Please try again.");
       } else if (data.UserID) {

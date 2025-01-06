@@ -327,8 +327,13 @@ def remove_user(user_id, password):
         return "Error: Incorrect password."
 
     # Delete associated shots
-    sql_delete_shots = "DELETE FROM shots WHERE SessionID IN (SELECT SessionID FROM practice_sessions WHERE UserID = %s)"
-    exec_commit(sql_delete_shots, (user_id,))
+    sessions = get_user_sessions(user_id)
+    for session in sessions:
+        session_blocks = get_session_blocks(session[0])
+        for block in session_blocks:
+            
+            sql_delete_shots = "DELETE FROM shots WHERE BlockID = %s)"
+            exec_commit(sql_delete_shots, (block[0],))
 
     # Delete associated practice sessions
     sql_delete_sessions = "DELETE FROM practice_sessions WHERE UserID = %s"
@@ -702,5 +707,5 @@ def get_session_block_stats(session_id):
     
 if __name__ == "__main__":
     rebuild_tables()
-    print(get_session_data(1,1))
+    print(get_user_sessions(1))
 
