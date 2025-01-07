@@ -38,9 +38,6 @@ CREATE TABLE blocks (
     SessionID INT NOT NULL,
     TargetArea target_area NOT NULL,
     ShotsPlanned INT NOT NULL,    -- Number of shots planned for this block
-    BlockOrder INT NOT NULL,      -- Order of blocks within the session
-    StartTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    EndTime TIMESTAMP,
     FOREIGN KEY (SessionID) REFERENCES practice_sessions(SessionID)
 );
 
@@ -68,15 +65,15 @@ VALUES
     (2, '2024-12-02 14:00:00', '2024-12-02 15:30:00');
 
 -- Sample blocks for the sessions
-INSERT INTO blocks (SessionID, TargetArea, ShotsPlanned, BlockOrder, StartTime, EndTime)
+INSERT INTO blocks (SessionID, TargetArea, ShotsPlanned)
 VALUES
     -- Session 1 blocks
-    (1, 'Top Left', 50, 1, '2024-12-01 10:00:00', '2024-12-01 10:45:00'),
-    (1, 'Top Right', 50, 2, '2024-12-01 10:45:00', '2024-12-01 11:30:00'),
+    (1, 'Top Left', 50),
+    (1, 'Top Right', 50),
     -- Session 2 blocks
-    (2, 'Five Hole', 30, 1, '2024-12-02 14:00:00', '2024-12-02 14:30:00'),
-    (2, 'Bottom Left', 40, 2, '2024-12-02 14:30:00', '2024-12-02 15:00:00'),
-    (2, 'Bottom Right', 40, 3, '2024-12-02 15:00:00', '2024-12-02 15:30:00');
+    (2, 'Five Hole', 30),
+    (2, 'Bottom Left', 40),
+    (2, 'Bottom Right', 40);
 
 -- Sample shots for each block (just a few examples)
 INSERT INTO shots (BlockID, ShotTime, ShotPositionX, ShotPositionY, Result)

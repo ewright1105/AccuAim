@@ -48,15 +48,16 @@ const LandingScreen: React.FC = () => {
         <View style={styles.container}>
         {user ? (
             <>
-            {/* Display the user's name in the welcome message */}
-            <Text style={styles.title}>Welcome, {user.name}!</Text>
-            <TouchableOpacity 
-                        style={styles.sessionsButton}
-                        onPress={() => router.push('/UserSessions')}
-                    >
-                        <Ionicons name="calendar-outline" size={20} color="#121212" style={styles.icon} />
-                        <Text style={styles.buttonText}>Your Sessions</Text>
-                    </TouchableOpacity>
+                {/* Display the user's name in the welcome message */}
+                <Text style={styles.title}>Welcome, {user.name}!</Text>
+                <TouchableOpacity style={styles.sessionsButton} onPress={() => router.push('/UserSessions')}>
+                    <Ionicons name="calendar-outline" size={20} color="#121212" style={styles.icon} />
+                    <Text style={styles.buttonText}>Your Sessions</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.sessionsButton} onPress={() => router.push('/CreateSession')}>
+                    <Ionicons name="add-circle" size={20} color="#121212" style={styles.icon} />
+                    <Text style={styles.buttonText}> New Session </Text>
+                </TouchableOpacity>
             </>
         ) : (
             <Text style={styles.subtitle}>You need to be logged in to view this page.</Text>

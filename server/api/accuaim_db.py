@@ -40,11 +40,11 @@ def get_session_shots(session_id):
     """
     sql = """
     SELECT s.ShotID, s.BlockID, s.ShotTime, s.ShotPositionX, s.ShotPositionY, s.Result, 
-           b.TargetArea, b.BlockOrder
+           b.TargetArea
     FROM shots s
     JOIN blocks b ON s.BlockID = b.BlockID
     WHERE b.SessionID = %s
-    ORDER BY b.BlockOrder, s.ShotTime;
+    ORDER BY b.id, s.ShotTime;
     """
     result = exec_get_all(sql, (session_id,))
     return [
@@ -473,7 +473,7 @@ def get_session_blocks(session_id):
     FROM blocks
     WHERE SessionID = %s"""
     
-    session_blocks = exec_get_all(sql, (session_id),)
+    session_blocks = exec_get_all(sql, (session_id,))
     
     return session_blocks
 
@@ -684,13 +684,13 @@ def get_session_block_stats(session_id):
         b.BlockID,
         b.TargetArea,
         b.ShotsPlanned,
-        SUM(CASE WHEN s.Result = 'Made' THEN 1 ELSE 0 END) as MadeShots,
-        SUM(CASE WHEN s.Result = 'Missed' THEN 1 ELSE 0 END) as MissedShots
+        COUNT(CASE WHEN s.Result = 'Made' THEN 1 END) as MadeShots,
+        COUNT(CASE WHEN s.Result = 'Missed' THEN 1 END) as MissedShots
     FROM blocks b
     LEFT JOIN shots s ON b.BlockID = s.BlockID
     WHERE b.SessionID = %s
     GROUP BY b.BlockID, b.TargetArea, b.ShotsPlanned
-    ORDER BY b.BlockOrder;
+    ORDER BY b.BlockID;
     """
     result = exec_get_all(sql, (session_id,))
     return [
@@ -698,14 +698,57 @@ def get_session_block_stats(session_id):
             'BlockID': block[0],
             'TargetArea': block[1],
             'ShotsPlanned': block[2],
-            'MadeShots': block[3],
-            'MissedShots': block[4]
+            'MadeShots': block[3] or 0,  # Convert None to 0
+            'MissedShots': block[4] or 0  # Convert None to 0
         }
         for block in result
     ]
 
+def add_blocks(blocks, session_id):
+    """
+    Adds given blocks to database 
+
+    Args:
+        blocks (dict): contains all blocks fo the givens session id
+        session_id (int) : the session to link the blocks to
     
+    """
+    
+    sql = """INSERT INTO blocks (SessionID, TargetArea, ShotsPlanned) VALUES (%s, %s, %s)"""
+    for block in blocks:
+        exec_commit(sql, (session_id, block["targetArea"], block["shotsPlanned"]))
+        
+    return (get_session_blocks(session_id))
+        
+    
+def create_session(user_id, blocks):
+        """
+        Adds session to database correlated with user
+        Does not have 
+
+        Args:
+            user_id (int): user to link new session to
+        
+        Returns:
+            New Session detais"""
+            
+        #verify user exists
+        if (get_user(user_id) == "User does not exist"):
+            return "User does not exist"
+        
+        sql = """INSERT INTO practice_sessions (UserID) VALUES (%s);"""   
+        
+        exec_commit(sql, (user_id,)) 
+
+        sessions = get_user_sessions(1)
+        new_session = sessions[len(sessions)-1]
+
+        add_blocks(blocks, new_session[0])
+        
+        return(new_session)
+
 if __name__ == "__main__":
     rebuild_tables()
-    print(get_user_sessions(1))
+    print(create_session(1,{"blocks": [{"shotsPlanned": "50", "targetArea": "Top Left"}]}))
+    
 
