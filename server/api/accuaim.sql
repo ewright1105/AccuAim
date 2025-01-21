@@ -8,7 +8,7 @@ CREATE TYPE target_area AS ENUM (
   'Top Left', 
   'Bottom Right', 
   'Bottom Left', 
-  'Crossbar', 
+  'Top Shelf', 
   'Right Pipe', 
   'Left Pipe', 
   'Five Hole'

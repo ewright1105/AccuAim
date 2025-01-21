@@ -119,7 +119,7 @@ def get_block_missed_shots(block_id):
         for shot in result
     ]
 
-def record_new_shot(block_id, shot_time, shot_position_x, shot_position_y, result):
+def record_new_shot(block_id, shot_position_x, shot_position_y, result):
     """
     Records a new shot in the database for a given block.
 
@@ -135,10 +135,10 @@ def record_new_shot(block_id, shot_time, shot_position_x, shot_position_y, resul
     """
     sql = """
     INSERT INTO shots (BlockID, ShotTime, ShotPositionX, ShotPositionY, Result)
-    VALUES (%s, %s, %s, %s, %s);
+    VALUES (%s, CURRENT_TIMESTAMP, %s, %s, %s);
     """
     try:
-        exec_commit(sql, (block_id, shot_time, shot_position_x, shot_position_y, result))
+        exec_commit(sql, (block_id, shot_position_x, shot_position_y, result))
         return "Shot recorded successfully."
     except Exception as e:
         return f"An error occurred while recording the shot: {e}"
@@ -749,6 +749,6 @@ def create_session(user_id, blocks):
 
 if __name__ == "__main__":
     rebuild_tables()
-    print(create_session(1,{"blocks": [{"shotsPlanned": "50", "targetArea": "Top Left"}]}))
+
     
 
