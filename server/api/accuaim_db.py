@@ -746,6 +746,21 @@ def create_session(user_id, blocks):
         add_blocks(blocks, new_session[0])
         
         return(new_session)
+    
+def update_session_end_time(SessionID):
+    """
+    Updates the end time for the given session
+    
+    Args:
+        SessionID (int): given session
+    
+    Return:
+        success message"""
+        
+    sql = "UPDATE practice_sessions SET sessionEnd = CURRENT_TIMESTAMP WHERE SessionID = %s "
+    exec_commit(sql, (SessionID,))
+    
+    return "session updated correctly"
 
 if __name__ == "__main__":
     rebuild_tables()

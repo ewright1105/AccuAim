@@ -24,7 +24,7 @@ api.add_resource(UserSessions, '/user/<int:UserID>/sessions')
 api.add_resource(SessionDetails, '/user/<int:UserID>/sessions/<int:SessionID>')
 api.add_resource(ChangePassword, '/user/<int:UserID>/change-password')
 api.add_resource(Blocks, '/blocks')
-api.add_resource(ActiveSession, '/user/<int:UserID>/sessions/active-session/<int:SessionID>')
+api.add_resource(ActiveSession, '/user/<int:UserID>/sessions/<int:SessionID>/active-session')
 
 
 if __name__ == "__main__":

@@ -1,8 +1,10 @@
 import React, { useState, useLayoutEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // For the icon
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useAuth } from './AuthContext';
+import { parseQueryParams } from 'expo-router/build/fork/getStateFromPath-forks';
+import { setParams } from 'expo-router/build/global-state/routing';
 
 const CreateSessionScreen: React.FC = () => {
     const { user } = useAuth();
@@ -13,7 +15,7 @@ const CreateSessionScreen: React.FC = () => {
     const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
 
     const navigation = useNavigation();
-
+    const router = useRouter();
     useLayoutEffect(() => {
         navigation.setOptions({
             title: "Sessions",
@@ -52,7 +54,6 @@ const CreateSessionScreen: React.FC = () => {
 
     const handleCreateSession = async () => {
         try {
-            const userID = 'some-user-id';
             const response = await fetch(`http://127.0.0.1:4949/user/${user?.UserID}/sessions`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -66,7 +67,20 @@ const CreateSessionScreen: React.FC = () => {
             const result = await response.json();
             console.log('Session Created:', result);
 
-            navigation.goBack();
+            try {
+                const sessionResponse = await fetch(`http://127.0.0.1:4949/user/${user?.UserID}/sessions`);
+                const sessions = await sessionResponse.json();
+            
+              
+                    const SessionID = sessions[sessions.length-1][0];  // Accessing the last session
+                 
+                    router.push({
+                        pathname: "/ActiveSessions",
+                        params: { SessionID }
+                    });
+            } catch (error) {
+                console.error(error);
+            }
         } catch (error) {
             console.error('Error creating session:', error);
         }
