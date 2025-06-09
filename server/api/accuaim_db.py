@@ -1,4 +1,4 @@
-from db_utils import *
+from api.db_utils import *
 import re
 import bcrypt
 
@@ -38,15 +38,18 @@ def get_session_shots(session_id):
     Returns:
         list: A list of dictionaries containing shot details with block information.
     """
+    # THE FIX is in the ORDER BY clause below
     sql = """
     SELECT s.ShotID, s.BlockID, s.ShotTime, s.ShotPositionX, s.ShotPositionY, s.Result, 
            b.TargetArea
     FROM shots s
     JOIN blocks b ON s.BlockID = b.BlockID
     WHERE b.SessionID = %s
-    ORDER BY b.id, s.ShotTime;
+    ORDER BY b.BlockID, s.ShotTime;
     """
     result = exec_get_all(sql, (session_id,))
+    
+    # This list comprehension is also corrected to not cause an IndexError
     return [
         {
             'ShotID': shot[0],
@@ -55,8 +58,7 @@ def get_session_shots(session_id):
             'ShotPositionX': shot[3],
             'ShotPositionY': shot[4],
             'Result': shot[5],
-            'TargetArea': shot[6],
-            'BlockOrder': shot[7]
+            'TargetArea': shot[6]
         }
         for shot in result
     ]
@@ -174,8 +176,11 @@ def reorder_shots(session_id):
     """
     # Fetch all shots for the session, ordered by ShotID
     sql = """
-    SELECT ShotID FROM shots WHERE SessionID = %s ORDER BY ShotID;
-    """
+        SELECT s.ShotID FROM shots s
+        JOIN blocks b ON s.BlockID = b.BlockID
+        WHERE b.SessionID = %s
+        ORDER BY s.ShotID;
+        """
     shots = exec_get_all(sql, (session_id,))
     
     # If there are shots to reorder
@@ -307,46 +312,28 @@ def create_user(email, full_name, password):
     
 def remove_user(user_id, password):
     """
-    Removes a user from the users table based on their UserID.
-
-    Args:
-        user_id (int): The ID of the user to remove.
-        password (string): The user's password for verification
-    Returns:
-        str: Success or error message.
+    Removes a user from the users table. Associated records are
+    deleted automatically by the database via ON DELETE CASCADE.
     """
-     # First, check if the user exists
-    sql_check = "SELECT * FROM users WHERE UserID = %s"
+    # First, check if the user exists and the password is correct
+    sql_check = "SELECT UserID, PasswordHash FROM users WHERE UserID = %s"
     user = exec_get_one(sql_check, (user_id,))
 
     if not user:
         return "Error: User not found."
     
-    #now check if password is correct
-    if not bcrypt.checkpw(password.encode('utf-8'), user[3].encode('utf-8')):
+    # Verify password
+    if not bcrypt.checkpw(password.encode('utf-8'), user[1].encode('utf-8')):
         return "Error: Incorrect password."
 
-    # Delete associated shots
-    sessions = get_user_sessions(user_id)
-    for session in sessions:
-        session_blocks = get_session_blocks(session[0])
-        for block in session_blocks:
-            
-            sql_delete_shots = "DELETE FROM shots WHERE BlockID = %s)"
-            exec_commit(sql_delete_shots, (block[0],))
-
-    # Delete associated practice sessions
-    sql_delete_sessions = "DELETE FROM practice_sessions WHERE UserID = %s"
-    exec_commit(sql_delete_sessions, (user_id,))
-
-    # Delete user
+    # With ON DELETE CASCADE, you only need to delete the user.
+    # The database will handle deleting all related sessions, blocks, and shots.
     sql_delete_user = "DELETE FROM users WHERE UserID = %s"
     try:
         exec_commit(sql_delete_user, (user_id,))
         return f"User with ID {user_id} and all associated records removed successfully."
     except Exception as e:
         return f"An error occurred while removing the user: {e}"
-    
 def get_user_id(user_email):
     """ 
     Retrieves the corresponding UserID for the user email provided
@@ -740,8 +727,8 @@ def create_session(user_id, blocks):
         
         exec_commit(sql, (user_id,)) 
 
-        sessions = get_user_sessions(1)
-        new_session = sessions[len(sessions)-1]
+        sessions = get_user_sessions(user_id)
+        new_session = sessions[-1]
 
         add_blocks(blocks, new_session[0])
         

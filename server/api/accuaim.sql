@@ -29,7 +29,7 @@ CREATE TABLE practice_sessions (
     UserID INT NOT NULL,
     SessionStart TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     SessionEnd TIMESTAMP,
-    FOREIGN KEY (UserID) REFERENCES users(UserID)
+     FOREIGN KEY (UserID) REFERENCES users(UserID) ON DELETE CASCADE 
 );
 
 -- Blocks table now directly related to sessions
@@ -38,7 +38,7 @@ CREATE TABLE blocks (
     SessionID INT NOT NULL,
     TargetArea target_area NOT NULL,
     ShotsPlanned INT NOT NULL,    -- Number of shots planned for this block
-    FOREIGN KEY (SessionID) REFERENCES practice_sessions(SessionID)
+    FOREIGN KEY (SessionID) REFERENCES practice_sessions(SessionID) ON DELETE CASCADE
 );
 
 -- Shots now belong to blocks instead of sessions directly
@@ -49,7 +49,7 @@ CREATE TABLE shots (
     ShotPositionX DECIMAL(10, 2) NOT NULL,
     ShotPositionY DECIMAL(10, 2) NOT NULL,
     Result shot_result NOT NULL,
-    FOREIGN KEY (BlockID) REFERENCES blocks(BlockID)
+    FOREIGN KEY (BlockID) REFERENCES blocks(BlockID) ON DELETE CASCADE
 );
 
 -- Sample data for users
