@@ -1,4 +1,7 @@
-import { Text, View, ScrollView, Button, TextInput, Alert, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  Text, View, ScrollView, Button, TextInput, Alert,
+  StyleSheet, TouchableOpacity
+} from "react-native";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useEffect, useLayoutEffect, useState } from "react";
 import React from "react";
@@ -12,39 +15,41 @@ export default function UserDetails() {
     timestamp: string;
   };
 
-  const { userId } = useLocalSearchParams();
+  const { userId } = useLocalSearchParams<{ userId: string }>();
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const navigation = useNavigation();
   const { updateUserName } = useAuth();
 
-  const [editUser, setEditUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Edit Profile
+  const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [editedEmail, setEditedEmail] = useState("");
 
-  // Password change states
+  // Password Change
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
-  // Delete account states
+  // Delete Account
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: "Settings",
+      title: "User Settings",
       headerLeft: () => (
         <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 15 }}>
           <Text style={{ color: "#F1C40F", fontSize: 26 }}>←</Text>
         </TouchableOpacity>
       ),
     });
-  }, [navigation]);
+  }, []);
 
   useEffect(() => {
     if (userId) {
@@ -52,355 +57,351 @@ export default function UserDetails() {
     }
   }, [userId]);
 
-  const fetchUserDetails = async (userId: String | String[]) => {
+  const fetchUserDetails = async (id: string | string[]) => {
     try {
-      const response = await fetch(`http://127.0.0.1:4949/user/${userId}`);
+      const response = await fetch(`http://127.0.0.1:4949/user/${id}`);
       const data = await response.json();
-      if (data && data.length > 0) {
-        const userData = data;
-        setUser({
-          UserID: userData[0],
-          email: userData[1],
-          name: userData[2],
-          timestamp: userData[3],
-        });
+      if (data?.length > 0) {
+        const [UserID, email, name, timestamp] = data;
+        setUser({ UserID, email, name, timestamp });
       } else {
-        setError("User not found");
+        setError("User not found.");
       }
-    } catch (error) {
-      console.error("Error fetching user details:", error);
-      setError("Failed to load user details");
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load user details.");
     } finally {
       setLoading(false);
     }
   };
 
-  const cancelEdit = () => {
-    setEditUser(null);
-    setEditedName("");
-    setEditedEmail("");
-  };
+  const handleUpdateProfile = async () => {
+    if (!editedName || !editedEmail) {
+      Alert.alert("Missing Info", "Name and email are required.");
+      return;
+    }
 
-  const cancelPasswordChange = () => {
-    setIsChangingPassword(false);
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmNewPassword("");
-  };
-
-  const handlePasswordChange = () => {
-    if (!user) {
-      Alert.alert("Error", "User information is missing.");
-      return;
-    }
-  
-    if (newPassword !== confirmNewPassword) {
-      Alert.alert("Password Mismatch", "New passwords do not match.");
-      return;
-    }
-  
-    if (newPassword.length < 8) {
-      Alert.alert("Invalid Password", "New password must be at least 8 characters long.");
-      return;
-    }
-  
-    // Proceed with the API call to change the password
-    fetch(`http://127.0.0.1:4949/user/${user.UserID}/change-password`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        current_password: currentPassword,
-        new_password: newPassword,
-      }),
-    })
-      .then((response) => {
-        return response.json();  // Only parse the JSON if the response is ok
-      })
-      .then((data) => {
-        // Check for errors in the response data
-        if (data?.includes("Error")) {
-          Alert.alert("Oops!", data || "An unexpected error occurred.");
-        } else {
-          Alert.alert("Success", "Password updated successfully");
-          cancelPasswordChange();  // Assuming this resets or closes the password change form
-        }
-      })
-      .catch((error) => {
-        console.error("Error changing password:", error);
-        Alert.alert("Error", error.message || "Failed to change password. Please try again.");
+    try {
+      const response = await fetch(`http://127.0.0.1:4949/user/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          UserID: user?.UserID,
+          name: editedName.trim(),
+          email: editedEmail.trim(),
+        }),
       });
-  };
-  
-  
 
-  const updateUser = () => {
-    if (editUser) {
-      const name = editedName.trim();
-      const email = editedEmail.trim();
-
-      if (name && email) {
-        fetch(`http://127.0.0.1:4949/user/${userId}`, {
-          method: "PUT",
-          body: JSON.stringify({
-            UserID: editUser.UserID,
-            name,
-            email,
-          }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        })
-          .then((response) => response.text())
-          .then((data) => {
-            if (data.includes("Error")) {
-              
-              data = data.replace('"', "").replace('."', '.');
-              Alert.alert("Oops!", data);
-            } else {
-              updateUserName(name);
-              fetchUserDetails(userId);
-              cancelEdit();
-            }
-          })
-          .catch((error) => {
-            console.error("Error adding user:", error);
-            Alert.alert("Error", "Failed to add user. Please try again.");
-          });
+      const result = await response.text();
+      if (result.includes("Error")) {
+        Alert.alert("Update Failed", result.replace(/[".]/g, ""));
       } else {
-        Alert.alert("Input Error", "Name and email are required.");
+        updateUserName(editedName);
+        fetchUserDetails(userId);
+        setIsEditing(false);
       }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Could not update profile.");
     }
   };
 
-  const deleteUser = (id: number, password: string) => {
-    fetch(`http://127.0.0.1:4949/user/${userId}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        UserID: id,
-        password: password,
-      }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        data.trim('"', '');
-        data.trim('."', '');
-        if (data.includes('Error')) {
-          Alert.alert("Oops!", data);
-        } else {
-          router.push('/');
-          setIsConfirmingDelete(false);
-        }
-      })
-      .catch((error) => {
-        console.error("Error deleting user:", error);
+  const handlePasswordChange = async () => {
+    if (!user) return;
+    if (newPassword !== confirmNewPassword) {
+      Alert.alert("Mismatch", "Passwords do not match.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      Alert.alert("Too Short", "Password must be at least 8 characters.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:4949/user/${user.UserID}/change-password`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+        }),
       });
+
+      const result = await response.json();
+      if (result.includes("Error")) {
+        Alert.alert("Error", result);
+      } else {
+        Alert.alert("Success", "Password changed successfully.");
+        setIsChangingPassword(false);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmNewPassword("");
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Failed", "Could not change password.");
+    }
   };
 
-  const handleDeleteUser = () => {
+  const handleDeleteUser = async () => {
+    if (!user) return;
     if (password !== confirmPassword) {
-      Alert.alert("Password Mismatch", "The passwords do not match.");
-    } else {
-      deleteUser(user!.UserID, password);
+      Alert.alert("Mismatch", "Passwords do not match.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:4949/user/${userId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ UserID: user.UserID, password }),
+      });
+
+      const result = await response.json();
+      if (result.includes("Error")) {
+        Alert.alert("Error", result);
+      } else {
+        router.push("/");
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Failed", "Could not delete account.");
     }
   };
 
   if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>Loading...</Text>
-      </View>
-    );
+    return <CenteredText message="Loading..." />;
   }
 
   if (error) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>{error}</Text>
+      <CenteredText message={error}>
         <Button title="Go Back" onPress={() => router.back()} />
-      </View>
+      </CenteredText>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>User Details</Text>
-      {user && (
-        <View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>ID:</Text>
-            <Text style={styles.detailText}>{user.UserID}</Text>
-          </View>
+  <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
+    <Text style={styles.header}>Account Info</Text>
 
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Name:</Text>
-            <Text style={styles.detailText}>{user.name}</Text>
-          </View>
+    {user && (
+      <View style={styles.card}>
+        <Detail label="User ID" value={user.UserID.toString()} />
+        <Detail label="Name" value={user.name} />
+        <Detail label="Email" value={user.email} />
+        <Detail label="Created On" value={user.timestamp} />
+      </View>
+    )}
 
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Email:</Text>
-            <Text style={styles.detailText}>{user.email}</Text>
-          </View>
-
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Created:</Text>
-            <Text style={styles.detailText}>{user.timestamp}</Text>
-          </View>
-
-          {/* Password Change Section */}
-          {isChangingPassword && (
-            <View style={styles.passwordChangeContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Current Password"
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-                secureTextEntry
-                placeholderTextColor="#F1C40F"
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="New Password"
-                value={newPassword}
-                onChangeText={setNewPassword}
-                secureTextEntry
-                placeholderTextColor="#F1C40F"
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Confirm New Password"
-                value={confirmNewPassword}
-                onChangeText={setConfirmNewPassword}
-                secureTextEntry
-                placeholderTextColor="#F1C40F"
-              />
-              <Button title="Change Password" onPress={handlePasswordChange} color="#F1C40F" />
-              <Button title="Cancel" onPress={cancelPasswordChange} color="gray" />
-            </View>
-          )}
-
-          {/* Editing user details */}
-          {editUser && (
-            <View style={styles.editContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Update name"
-                value={editedName}
-                onChangeText={setEditedName}
-                placeholderTextColor="#F1C40F"
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Update email"
-                value={editedEmail}
-                onChangeText={setEditedEmail}
-                keyboardType="email-address"
-                placeholderTextColor="#F1C40F"
-              />
-              <Button title="Update User" onPress={updateUser} color="#F1C40F" />
-              <Button title="Cancel" onPress={cancelEdit} color="gray" />
-            </View>
-          )}
-
-          {/* Action Buttons */}
-          {!editUser && !isChangingPassword && !isConfirmingDelete && (
-            <>
-              <Button
-                title="Edit User"
-                onPress={() => {
-                  setEditUser(user);
-                  setEditedName(user.name);
-                  setEditedEmail(user.email);
-                }}
-                color="#F1C40F"
-              />
-              <Button
-                title="Change Password"
-                onPress={() => setIsChangingPassword(true)}
-                color="#F1C40F"
-              />
-              <Button title="Sign Out" onPress={() => router.push('/')} color="#F1C40F" />
-              <Button
-                title="Delete User"
-                onPress={() => setIsConfirmingDelete(true)}
-                color="red"
-              />
-            </>
-          )}
-
-          {/* Confirm password inputs when deleting */}
-          {isConfirmingDelete && (
-            <View style={styles.deleteConfirmContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                placeholderTextColor="#F1C40F"
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-                placeholderTextColor="#F1C40F"
-              />
-              <Button title="Confirm Deletion" onPress={handleDeleteUser} color="red" />
-              <Button title="Cancel" onPress={() => setIsConfirmingDelete(false)} color="gray" />
-            </View>
-          )}
+    {isEditing && (
+      <View style={styles.card}>
+        <Text style={styles.cardHeader}>Edit Profile</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="New Name"
+          value={editedName}
+          onChangeText={setEditedName}
+          placeholderTextColor="#888"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="New Email"
+          value={editedEmail}
+          onChangeText={setEditedEmail}
+          keyboardType="email-address"
+          placeholderTextColor="#888"
+        />
+        <View style={styles.buttonRow}>
+          <ActionButton label="Save" onPress={handleUpdateProfile} />
+          <ActionButton label="Cancel" onPress={() => setIsEditing(false)} secondary />
         </View>
-      )}
-    </ScrollView>
-  );
+      </View>
+    )}
+
+    {isChangingPassword && (
+      <View style={styles.card}>
+        <Text style={styles.cardHeader}>Change Password</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Current Password"
+          value={currentPassword}
+          onChangeText={setCurrentPassword}
+          secureTextEntry
+          placeholderTextColor="#888"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="New Password"
+          value={newPassword}
+          onChangeText={setNewPassword}
+          secureTextEntry
+          placeholderTextColor="#888"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Confirm New Password"
+          value={confirmNewPassword}
+          onChangeText={setConfirmNewPassword}
+          secureTextEntry
+          placeholderTextColor="#888"
+        />
+        <View style={styles.buttonRow}>
+          <ActionButton label="Update" onPress={handlePasswordChange} />
+          <ActionButton label="Cancel" onPress={() => setIsChangingPassword(false)} secondary />
+        </View>
+      </View>
+    )}
+
+    {isConfirmingDelete && (
+      <View style={styles.card}>
+        <Text style={[styles.cardHeader, { color: 'red' }]}>Confirm Delete Account</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          placeholderTextColor="#888"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Confirm Password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+          placeholderTextColor="#888"
+        />
+        <View style={styles.buttonRow}>
+          <ActionButton label="Delete" onPress={handleDeleteUser} danger />
+          <ActionButton label="Cancel" onPress={() => setIsConfirmingDelete(false)} secondary />
+        </View>
+      </View>
+    )}
+
+    {!isEditing && !isChangingPassword && !isConfirmingDelete && (
+      <View style={styles.card}>
+        <Text style={styles.cardHeader}>Actions</Text>
+        <ActionButton label="Edit Profile" onPress={() => {
+          setEditedName(user?.name ?? "");
+          setEditedEmail(user?.email ?? "");
+          setIsEditing(true);
+        }} />
+        <ActionButton label="Change Password" onPress={() => setIsChangingPassword(true)} />
+        <ActionButton label="Sign Out" onPress={() => router.push("/")} />
+        <ActionButton label="Delete Account" onPress={() => setIsConfirmingDelete(true)} danger />
+      </View>
+    )}
+  </ScrollView>
+);
+
 }
 
+// --- Components & Styles ---
+
+const Detail = ({ label, value }: { label: string, value: string }) => (
+  <View style={styles.detailRow}>
+    <Text style={styles.detailLabel}>{label}:</Text>
+    <Text style={styles.detailText}>{value}</Text>
+  </View>
+);
+
+const CenteredText = ({ message, children }: { message: string, children?: React.ReactNode }) => (
+  <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+    <Text>{message}</Text>
+    {children}
+  </View>
+);
+
+const ActionButton = ({ label, onPress, secondary = false, danger = false }: {
+  label: string;
+  onPress: () => void;
+  secondary?: boolean;
+  danger?: boolean;
+}) => (
+  <TouchableOpacity
+    onPress={onPress}
+    style={[
+      styles.actionButton,
+      secondary && styles.buttonSecondary,
+      danger && styles.buttonDanger,
+    ]}
+  >
+    <Text style={styles.buttonText}>{label}</Text>
+  </TouchableOpacity>
+);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: "#121212",
+    paddingHorizontal: 20,
   },
   header: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
     color: "#F1C40F",
+    marginVertical: 20,
+  },
+  card: {
+    backgroundColor: "#1E1E1E",
+    padding: 20,
+    borderRadius: 12,
     marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  cardHeader: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#F1C40F",
+    marginBottom: 10,
+  },
+  input: {
+    backgroundColor: "#2C2C2C",
+    borderRadius: 8,
+    padding: 10,
+    color: "#F1C40F",
+    borderColor: "#F1C40F",
+    borderWidth: 1,
+    marginBottom: 12,
   },
   detailRow: {
-    marginBottom: 15,
+    marginBottom: 12,
   },
   detailLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "bold",
-    color: "#F1C40F",
+    color: "#888",
   },
   detailText: {
     fontSize: 16,
     color: "#F1C40F",
   },
-  editContainer: {
-    marginVertical: 20,
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
   },
-  passwordChangeContainer: {
-    marginVertical: 20,
+  actionButton: {
+    backgroundColor: "#F1C40F",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginVertical: 6,
   },
-  input: {
-    height: 40,
-    borderColor: "#F1C40F",
-    borderWidth: 1,
-    marginBottom: 10,
-    width: "100%",
-    paddingHorizontal: 10,
-    color: "#F1C40F",
+  buttonSecondary: {
+    backgroundColor: "#555",
   },
-  deleteConfirmContainer: {
-    marginTop: 20,
+  buttonDanger: {
+    backgroundColor: "#E74C3C",
+  },
+  buttonText: {
+    color: "#121212",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });

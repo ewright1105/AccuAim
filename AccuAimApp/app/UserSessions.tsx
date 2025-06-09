@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useLayoutEffect } from "react";
-import { Text, View, ScrollView, Button, Alert, StyleSheet, TouchableOpacity } from "react-native";
-import { useAuth } from './AuthContext'; // Assuming the AuthContext is in the same folder
+import {
+  Text,
+  View,
+  ScrollView,
+  ActivityIndicator,
+  StyleSheet,
+  TouchableOpacity,
+  Button,
+} from "react-native";
+import { useAuth } from "./AuthContext";
 import { useNavigation, useRouter } from "expo-router";
 
 // Session interface
@@ -12,91 +20,92 @@ interface Session {
 }
 
 export default function UserSessions() {
-  const { user } = useAuth(); // Get logged-in user from AuthContext
+  const { user } = useAuth();
   const router = useRouter();
   const navigation = useNavigation();
+
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Set up the navigation header
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: "Sessions",
+      title: "My Practice Sessions",
       headerLeft: () => (
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginLeft: 15 }}>
-          <Text style={{ color: "#F1C40F", fontSize: 26 }}>←</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
       ),
     });
   }, [navigation]);
 
-  // Fetch user sessions when the user is logged in
   useEffect(() => {
     if (user) {
-      fetchUserSessions(user.UserID); // Fetch sessions using the logged-in user's ID
+      fetchUserSessions(user.UserID);
     } else {
-      setError("User not logged in");
+      setError("You must be logged in to view your sessions.");
       setLoading(false);
     }
   }, [user]);
 
-  // Function to fetch user sessions
   const fetchUserSessions = async (userId: string) => {
     try {
       const response = await fetch(`http://127.0.0.1:4949/user/${userId}/sessions`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch sessions");
-      }
+      if (!response.ok) throw new Error("Could not fetch sessions.");
       const data = await response.json();
 
       if (Array.isArray(data) && data.length > 0) {
-        const formattedSessions: Session[] = data.map((session: [number, number, string, string]) => ({
-          sessionId: session[0],
-          userId: session[1],
-          startTime: session[2],
-          endTime: session[3],
-        }));
-        setSessions(formattedSessions);
+        const formatted: Session[] = data.map(
+          (session: [number, number, string, string]) => ({
+            sessionId: session[0],
+            userId: session[1],
+            startTime: session[2],
+            endTime: session[3],
+          })
+        );
+        setSessions(formatted);
       } else {
-        setError("No sessions found");
+        setError("You haven't recorded any sessions yet.");
       }
-    } catch (error) {
-      console.error("Error fetching user sessions:", error);
-      setError("Failed to load user sessions");
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError("Something went wrong while loading your sessions.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Helper function to format the date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
-  // Helper function to calculate session duration
-  const calculateDuration = (startTime: string, endTime: string) => {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    const durationInMs = end.getTime() - start.getTime();
-    const durationInMin = Math.floor(durationInMs / 1000 / 60);
-    const hours = Math.floor(durationInMin / 60);
-    const minutes = durationInMin % 60;
-    return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+  const calculateDuration = (start: string, end: string) => {
+    const s = new Date(start), e = new Date(end);
+    const mins = Math.floor((e.getTime() - s.getTime()) / 60000);
+    const h = Math.floor(mins / 60), m = mins % 60;
+    return `${h}h ${m}m`;
   };
 
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <Text>Loading...</Text>
+        <ActivityIndicator size="large" color="#F1C40F" />
+        <Text style={styles.loadingText}>Loading your sessions...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.container}>
+      <View style={styles.centeredContainer}>
         <Text style={styles.errorText}>{error}</Text>
       </View>
     );
@@ -104,16 +113,19 @@ export default function UserSessions() {
 
   return (
     <ScrollView style={styles.container}>
+      <Text style={styles.header}>Your Practice Sessions</Text>
       {sessions.map((session) => (
         <View key={session.sessionId} style={styles.sessionItem}>
-          <Text style={styles.sessionText}>Session ID: {session.sessionId}</Text>
+          <Text style={styles.sessionText}>📅 {formatDate(session.startTime)}</Text>
           <Text style={styles.sessionText}>
-            Date: {formatDate(session.startTime)}
+            🕒 Duration: {calculateDuration(session.startTime, session.endTime)}
           </Text>
-          <Text style={styles.sessionText}>
-            Duration: {calculateDuration(session.startTime, session.endTime)}
-          </Text>
-          <Button title="View Details" onPress={() => router.push(`/user/sessions/${session.sessionId}`)} color="#F1C40F"/>
+          <TouchableOpacity
+            onPress={() => router.push(`/user/sessions/${session.sessionId}`)}
+            style={styles.viewButton}
+          >
+            <Text style={styles.buttonText}>View Details</Text>
+          </TouchableOpacity>
         </View>
       ))}
     </ScrollView>
@@ -123,35 +135,63 @@ export default function UserSessions() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: "#121212",
+    paddingHorizontal: 20,
+    paddingTop: 10,
   },
   header: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 22,
+    fontWeight: "600",
     color: "#F1C40F",
     marginBottom: 20,
   },
   sessionItem: {
-    backgroundColor: "#333",
+    backgroundColor: "#1e1e1e",
     padding: 15,
+    borderRadius: 10,
     marginBottom: 15,
-    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#2c2c2c",
   },
   sessionText: {
     fontSize: 16,
-    color: "#F1C40F",
+    color: "#fff",
+    marginBottom: 6,
+  },
+  viewButton: {
+    marginTop: 8,
+    backgroundColor: "#F1C40F",
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#121212",
+    fontWeight: "600",
+    fontSize: 16,
   },
   centeredContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#121212",
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    color: "#F1C40F",
+    fontSize: 16,
   },
   errorText: {
+    color: "#F1C40F",
     fontSize: 18,
-    color: "#F1C40F",  // Same gold color as other text
-    fontWeight: "bold",
     textAlign: "center",
-    marginVertical: 20,
+  },
+  backButton: {
+    marginLeft: 15,
+  },
+  backArrow: {
+    color: "#F1C40F",
+    fontSize: 26,
   },
 });
