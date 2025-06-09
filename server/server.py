@@ -31,4 +31,4 @@ if __name__ == "__main__":
     print("Loading db...")
     rebuild_tables()
     print("Starting Flask")
-    app.run(debug=True,port=4949)
+    app.run(debug=True,host='0.0.0.0',port=4949)

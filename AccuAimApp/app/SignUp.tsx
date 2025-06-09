@@ -35,7 +35,7 @@ export default function SignUp() {
   // Function to fetch the new user ID
   const updateNewUserId = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:4949/");
+      const response = await fetch("http://172.31.0.87:4949/");
       if (!response.ok) {
         throw new Error(`HTTP Error: ${response.status}`);
       }
@@ -88,7 +88,7 @@ export default function SignUp() {
     }
 
     try {
-      const response = await fetch("http://127.0.0.1:4949/", {
+      const response = await fetch("http://172.31.0.87:4949/", {
         method: "POST",
         body: JSON.stringify({ name, email, password }), // Include password
         headers: {

@@ -54,7 +54,7 @@ const CreateSessionScreen: React.FC = () => {
 
     const handleCreateSession = async () => {
         try {
-            const response = await fetch(`http://127.0.0.1:4949/user/${user?.UserID}/sessions`, {
+            const response = await fetch(`http://172.31.0.87:4949/user/${user?.UserID}/sessions`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ UserID: user?.UserID, blocks: blocks }),
@@ -68,14 +68,14 @@ const CreateSessionScreen: React.FC = () => {
             console.log('Session Created:', result);
 
             try {
-                const sessionResponse = await fetch(`http://127.0.0.1:4949/user/${user?.UserID}/sessions`);
+                const sessionResponse = await fetch(`http://172.31.0.87:4949/user/${user?.UserID}/sessions`);
                 const sessions = await sessionResponse.json();
             
               
                     const SessionID = sessions[sessions.length-1][0];  // Accessing the last session
                  
                     router.push({
-                        pathname: "/ActiveSessions",
+                        pathname: "/ActiveSession",
                         params: { SessionID }
                     });
             } catch (error) {

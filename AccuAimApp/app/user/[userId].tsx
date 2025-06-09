@@ -54,7 +54,7 @@ export default function UserDetails() {
 
   const fetchUserDetails = async (userId: String | String[]) => {
     try {
-      const response = await fetch(`http://127.0.0.1:4949/user/${userId}`);
+      const response = await fetch(`http://172.31.0.87:4949/user/${userId}`);
       const data = await response.json();
       if (data && data.length > 0) {
         const userData = data;
@@ -105,7 +105,7 @@ export default function UserDetails() {
     }
   
     // Proceed with the API call to change the password
-    fetch(`http://127.0.0.1:4949/user/${user.UserID}/change-password`, {
+    fetch(`http://172.31.0.87:4949/user/${user.UserID}/change-password`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -141,7 +141,7 @@ export default function UserDetails() {
       const email = editedEmail.trim();
 
       if (name && email) {
-        fetch(`http://127.0.0.1:4949/user/${userId}`, {
+        fetch(`http://172.31.0.87:4949/user/${userId}`, {
           method: "PUT",
           body: JSON.stringify({
             UserID: editUser.UserID,
@@ -175,7 +175,7 @@ export default function UserDetails() {
   };
 
   const deleteUser = (id: number, password: string) => {
-    fetch(`http://127.0.0.1:4949/user/${userId}`, {
+    fetch(`http://172.31.0.87:4949/user/${userId}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

@@ -39,7 +39,7 @@ const Login: React.FC = () => {
     setIsLoading(true); // Set loading state to true
 
     try {
-      const response = await fetch('http://127.0.0.1:4949/user/login', {
+      const response = await fetch('http://172.31.0.87:4949/user/login', {
         method: 'POST',
         body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
         headers: {
