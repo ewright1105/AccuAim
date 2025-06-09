@@ -1,4 +1,4 @@
-from api.db_utils import *
+from db_utils import *
 import re
 import bcrypt
 

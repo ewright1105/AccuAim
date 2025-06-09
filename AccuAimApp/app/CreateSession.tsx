@@ -75,7 +75,7 @@ const CreateSessionScreen: React.FC = () => {
                     const SessionID = sessions[sessions.length-1][0];  // Accessing the last session
                  
                     router.push({
-                        pathname: "/ActiveSessions",
+                        pathname: "/ActiveSession",
                         params: { SessionID }
                     });
             } catch (error) {
