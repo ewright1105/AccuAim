@@ -1,88 +1,113 @@
-import { Text, View, Button, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { useLayoutEffect } from "react";
-import { useNavigation, useRouter } from "expo-router";
+import React, { useLayoutEffect } from 'react';
+import { Text, View, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { useNavigation, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function Index() {
+const Index: React.FC = () => {
   const router = useRouter();
   const navigation = useNavigation();
+
+  // --- Hooks ---
   useLayoutEffect(() => {
+    // Hide the header for a cleaner landing screen
     navigation.setOptions({
-      title: "AccuAim",
+      headerShown: false,
     });
   }, [navigation]);
 
+  // --- Render Logic ---
   return (
     <View style={styles.container}>
       <Image
-        source={require("/Users/evanwright/personal-projects/AccuAim/AccuAimApp/assets/images/Screenshot 2024-12-30 at 6.45.08 PM.png")} // Adjust this path to match your logo file location
+        // IMPORTANT: Replace with the correct relative path to your logo
+        source={require("/Users/evanwright/personal-projects/AccuAim/AccuAimApp/assets/images/Screenshot 2024-12-30 at 6.45.08 PM.png")} 
         style={styles.logo}
         resizeMode="contain"
       />
-      <Text style={styles.title}>Welcome to AccuAim</Text>
-      <Text style={styles.subtitle}>Please log in or sign up to get started</Text>
+      <Text style={styles.title}>AccuAim</Text>
+      <Text style={styles.subtitle}>Perfect your practice. Track your progress.</Text>
 
-      {/* Login Button */}
+      {/* Login Button (Primary Action) */}
       <TouchableOpacity
-        style={styles.button}
-        onPress={() => {
-          router.push("/Login");
-        }}
+        style={styles.primaryButton}
+        onPress={() => router.push("/Login")}
       >
-        <Text style={styles.buttonText}>Login</Text>
+        <Ionicons name="log-in-outline" size={24} color="#121212" />
+        <Text style={styles.primaryButtonText}>Login</Text>
       </TouchableOpacity>
 
-      {/* Sign Up Button */}
+      {/* Sign Up Button (Secondary Action) */}
       <TouchableOpacity
-        style={[styles.button, styles.signUpButton]}
-        onPress={() => {
-          router.push("/SignUp");
-        }}
+        style={styles.secondaryButton}
+        onPress={() => router.push("/SignUp")}
       >
-        <Text style={styles.buttonText}>Sign Up</Text>
+        <Ionicons name="person-add-outline" size={22} color="#F1C40F" />
+        <Text style={styles.secondaryButtonText}>Sign Up</Text>
       </TouchableOpacity>
     </View>
   );
-}
+};
 
+// --- Styles ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#121212", 
-    paddingHorizontal: 20,
+    backgroundColor: '#121212',
+    justifyContent: 'center', // This is the key change to center the content block
+    alignItems: 'center',
+    paddingHorizontal: 25, // Add padding for content spacing from edges
   },
   logo: {
-    width: 200,
-    height: 200,
+    width: 150,
+    height: 150,
     marginBottom: 20,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "#F1C40F", 
+    fontSize: 40,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 18,
-    marginBottom: 40,
-    color: "#B0B0B0", 
+    color: '#B0B0B0',
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 60, // Creates space between the text and the buttons
   },
-  button: {
-    backgroundColor: "#F1C40F", 
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 8,
-    marginBottom: 20,
-    width: "80%",
-    alignItems: "center",
+  primaryButton: {
+    backgroundColor: '#F1C40F',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 18,
+    borderRadius: 12,
+    width: '100%', // Makes button fill container width
+    marginBottom: 15, // Space between buttons
   },
-  signUpButton: {
-    backgroundColor: "#FFC107", 
-  },
-  buttonText: {
-    color: "#121212",
+  primaryButtonText: {
+    color: '#121212',
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
+    marginLeft: 10,
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 18,
+    borderRadius: 12,
+    width: '100%', // Makes button fill container width
+    borderWidth: 1.5,
+    borderColor: '#F1C40F',
+  },
+  secondaryButtonText: {
+    color: '#F1C40F',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 10,
   },
 });
+
+export default Index;

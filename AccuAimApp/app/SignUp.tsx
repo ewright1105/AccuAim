@@ -1,183 +1,267 @@
-import { useNavigation, useRouter } from "expo-router";
-import React, { useLayoutEffect, useState } from "react";
-import { View, Text, Button, Alert, TextInput, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useLayoutEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Alert,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView
+} from 'react-native';
+import { useNavigation, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function SignUp() {
-  const [newName, setNewName] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [newUserId, setNewUserId] = useState(null);
+const SignUp: React.FC = () => {
+  const [name, setName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
   const router = useRouter();
   const navigation = useNavigation();
 
+  // --- Hooks ---
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: "AccuAim",
+      title: "Create Account",
+      headerStyle: { backgroundColor: '#121212' },
+      headerTitleStyle: { color: '#FFFFFF' },
+      headerShadowVisible: false,
       headerLeft: () => (
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={{ marginLeft: 15 }}
         >
-          <Text style={{ color: "#F1C40F", fontSize: 26 }}>←</Text>
+          <Ionicons name="arrow-back" size={28} color="#F1C40F" />
         </TouchableOpacity>
       ),
     });
   }, [navigation]);
 
-  type User = {
-    id: number;
-    email: string;
-    name: string;
-    timestamp: string;
-  };
+  // --- Handlers ---
+  const handleSignUp = async () => {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
 
-  // Function to fetch the new user ID
-  const updateNewUserId = async () => {
-    try {
-      const response = await fetch("http://127.0.0.1:4949/");
-      if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status}`);
-      }
-      const data = await response.json();
-
-      const usersList = data.map((userData: [number, string, string, string]) => ({
-        id: userData[0],
-        email: userData[1],
-        name: userData[2],
-        timestamp: userData[3],
-      }));
-
-      const user = usersList.find((user: User) => user.email === newEmail);
-      if (user) {
-        setNewUserId(user.id);
-        return user.id; // Return the user ID after finding it
-      } else {
-        console.error("User not found in the users list.");
-        throw new Error("User not found.");
-      }
-    } catch (error) {
-      console.error("Error fetching users data:", error);
-      Alert.alert("Error", "Failed to fetch user data.");
-      return null;
-    }
-  };
-
-  const addUser = async () => {
-    const name = newName.trim();
-    const email = newEmail.trim();
-    const password = newPassword.trim();
-    const confirmPasswordTrimmed = confirmPassword.trim();
-
-    // Check if all fields are filled
-    if (!name || !email || !password || !confirmPassword) {
+    // --- Input Validation ---
+    if (!trimmedName || !trimmedEmail || !trimmedPassword || !confirmPassword) {
       Alert.alert("Input Error", "All fields are required.");
       return;
     }
-
-    // Check if passwords match
-    if (password !== confirmPasswordTrimmed) {
+    if (trimmedPassword !== confirmPassword.trim()) {
       Alert.alert("Password Error", "Passwords do not match.");
       return;
     }
-
-    // Password strength validation (simple example: minimum 8 characters)
-    if (password.length < 8) {
-      Alert.alert("Password Error", "Password must be at least 8 characters.");
+    if (trimmedPassword.length < 8) {
+      Alert.alert("Password Error", "Password must be at least 8 characters long.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      Alert.alert("Input Error", "Please enter a valid email address.");
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      const response = await fetch("http://127.0.0.1:4949/", {
-        method: "POST",
-        body: JSON.stringify({ name, email, password }), // Include password
+      // NOTE: Assumes a dedicated endpoint for registration, e.g., '/user/register'
+      const response = await fetch('http://127.0.0.1:4949/user/register', {
+        method: 'POST',
+        body: JSON.stringify({ name: trimmedName, email: trimmedEmail, password: trimmedPassword }),
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
 
-      const data = await response.text(); // Get the response as plain text to handle errors from the server
+      const data = await response.json();
 
-      // Check for errors in the response
-      if (data.includes("Error")) {
-        Alert.alert("An Error has Occurred!", data.replace('"', "").replace('."', "."));
-      } else {
-        // If no error, reset fields and fetch user ID
-        setNewName("");
-        setNewEmail("");
-        setNewPassword("");
-        setConfirmPassword("");
-        const userId = await updateNewUserId(); // Fetch the new user ID
-
-        if (userId) {
-          router.push(`/Login`); // Navigate to the new user's page using the retrieved user ID
-        } else {
-          Alert.alert("Error", "Failed to retrieve user ID.");
-        }
+      if (!response.ok) {
+        // Handle specific server-side errors, e.g., "Email already in use"
+        throw new Error(data.message || 'An error occurred during sign-up.');
       }
-    } catch (error) {
-      console.error("Error adding user:", error);
-      Alert.alert("Error", "An error occurred while adding the user. Please try again.");
+      
+      Alert.alert(
+        "Success!",
+        "Your account has been created. Please log in.",
+        [{ text: "OK", onPress: () => router.push('/Login') }]
+      );
+
+    } catch (error: any) {
+      console.error("Error signing up:", error);
+      Alert.alert('Sign-up Failed', error.message || 'Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // --- Render Logic ---
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter name"
-        placeholderTextColor="#F1C40F"
-        value={newName}
-        onChangeText={setNewName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Enter email"
-        placeholderTextColor="#F1C40F"
-        value={newEmail}
-        onChangeText={setNewEmail}
-        keyboardType="email-address"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Enter password"
-        placeholderTextColor="#F1C40F"
-        value={newPassword}
-        onChangeText={setNewPassword}
-        secureTextEntry
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Confirm password"
-        placeholderTextColor="#F1C40F"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-      />
-      <Button
-        title="Add User"
-        onPress={addUser}
-        color="#F1C40F"
-      />
-    </View>
-  );
-}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <ScrollView contentContainerStyle={styles.innerContainer}>
+        <Text style={styles.header}>Create Your Account</Text>
+        <Text style={styles.subHeader}>Join AccuAim to track your progress.</Text>
 
+        {/* --- Name Input --- */}
+        <View style={styles.inputContainer}>
+          <Ionicons name="person-outline" size={22} color="#B0B0B0" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            value={name}
+            onChangeText={setName}
+            placeholderTextColor="#B0B0B0"
+          />
+        </View>
+
+        {/* --- Email Input --- */}
+        <View style={styles.inputContainer}>
+          <Ionicons name="mail-outline" size={22} color="#B0B0B0" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Email Address"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            placeholderTextColor="#B0B0B0"
+            autoCapitalize="none"
+          />
+        </View>
+
+        {/* --- Password Input --- */}
+        <View style={styles.inputContainer}>
+          <Ionicons name="lock-closed-outline" size={22} color="#B0B0B0" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Password (min. 8 characters)"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={true}
+            placeholderTextColor="#B0B0B0"
+          />
+        </View>
+
+        {/* --- Confirm Password Input --- */}
+        <View style={styles.inputContainer}>
+          <Ionicons name="lock-closed-outline" size={22} color="#B0B0B0" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry={true}
+            placeholderTextColor="#B0B0B0"
+          />
+        </View>
+
+        {/* --- Sign-Up Button --- */}
+        <TouchableOpacity
+          style={styles.signUpButton}
+          onPress={handleSignUp}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#121212" />
+          ) : (
+            <Text style={styles.signUpButtonText}>Create Account</Text>
+          )}
+        </TouchableOpacity>
+
+        {/* --- Login Link --- */}
+        <View style={styles.loginLinkContainer}>
+            <Text style={styles.loginText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => router.push('/Login')}>
+                <Text style={styles.loginLink}>Log In</Text>
+            </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+};
+
+// --- Styles ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#121212", 
+    backgroundColor: '#121212',
+  },
+  innerContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 20, // Add padding for scroll view
+  },
+  header: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  subHeader: {
+    fontSize: 16,
+    color: '#B0B0B0',
+    marginBottom: 40,
+    textAlign: 'center',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E1E1E',
+    borderRadius: 12,
+    width: '100%',
+    height: 55,
+    marginBottom: 15,
+    paddingHorizontal: 15,
+    borderWidth: 1,
+    borderColor: '#333333',
+  },
+  inputIcon: {
+    marginRight: 10,
   },
   input: {
-    height: 40,
-    borderColor: "#F1C40F", 
-    borderWidth: 1,
-    marginBottom: 10,
-    width: "100%",
-    paddingHorizontal: 10,
-    color: "#F1C40F", 
+    flex: 1,
+    height: '100%',
+    color: '#FFFFFF',
+    fontSize: 16,
   },
+  signUpButton: {
+    backgroundColor: '#F1C40F',
+    borderRadius: 12,
+    width: '100%',
+    paddingVertical: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  signUpButtonText: {
+    color: '#121212',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  loginLinkContainer: {
+    flexDirection: 'row',
+    marginTop: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loginText: {
+    color: '#B0B0B0',
+    fontSize: 14,
+  },
+  loginLink: {
+    color: '#F1C40F',
+    fontSize: 14,
+    fontWeight: 'bold',
+  }
 });
+
+export default SignUp;
