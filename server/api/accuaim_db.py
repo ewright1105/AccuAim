@@ -628,12 +628,9 @@ def create_session(user_id, blocks):
     Returns:
         tuple: The new session's details, or an error string.
     """
-    # Verify user exists
     if get_user(user_id) == "User does not exist":
         return "User does not exist"
     
-    # THE FIX: Include SessionStart in the INSERT statement and use CURRENT_TIMESTAMP
-    # to provide a non-null value for it.
     sql = """INSERT INTO practice_sessions (UserID, SessionStart) VALUES (%s, CURRENT_TIMESTAMP);"""   
     
     exec_commit(sql, (user_id,)) 
@@ -660,10 +657,6 @@ def update_session_end_time(SessionID):
     exec_commit(sql, (SessionID,))
     
     return "session updated correctly"
-
-# In accuaim_db.py
-
-# In accuaim_db.py
 
 def get_leaderboard_stats(sort_by='accuracy'):
     """
@@ -715,7 +708,6 @@ def get_leaderboard_stats(sort_by='accuracy'):
     
     result = exec_get_all(sql, {'sort_by': sort_by})
     
-    # No changes needed in the Python processing part
     return [
         {
             'UserID': row[0],

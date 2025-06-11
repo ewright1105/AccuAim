@@ -1,263 +1,319 @@
 import React, { useState, useLayoutEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, FlatList } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // For the icon
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRouter } from 'expo-router';
 import { useAuth } from './AuthContext';
-import { parseQueryParams } from 'expo-router/build/fork/getStateFromPath-forks';
-import { setParams } from 'expo-router/build/global-state/routing';
 
 const CreateSessionScreen: React.FC = () => {
     const { user } = useAuth();
-    const [numBlocks, setNumBlocks] = useState<number>(0);
-    const [blocks, setBlocks] = useState<Array<any>>([{ targetArea: 'Top Right', shotsPlanned: '0' }]);
-    const [targetAreas] = useState(['Top Right', 'Top Left', 'Bottom Right', 'Bottom Left', 'Top Shelf', 'Right Pipe', 'Left Pipe', 'Five Hole']);
+    const router = useRouter();
+    const navigation = useNavigation();
+
+    // State initialized for a cleaner start. Start with 1 block by default.
+    const [blocks, setBlocks] = useState<Array<any>>([{ targetArea: 'Top Right', shotsPlanned: '' }]);
+    
+    // Corrected target areas to match the database ENUM
+    const [targetAreas] = useState([
+        'Top Right', 'Top Left', 'Bottom Right', 'Bottom Left', 'Left Hip', 'Right Hip', 'Bar Down'
+    ]);
+
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
 
-    const navigation = useNavigation();
-    const router = useRouter();
     useLayoutEffect(() => {
         navigation.setOptions({
-            title: "Sessions",
+            title: "New Session",
+            headerStyle: { backgroundColor: '#121212' },
+            headerTitleStyle: { color: '#FFFFFF' },
             headerLeft: () => (
                 <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginLeft: 15 }}>
-                    <Text style={{ color: "#F1C40F", fontSize: 26 }}>←</Text>
+                    <Ionicons name="arrow-back" size={28} color="#F1C40F" />
                 </TouchableOpacity>
             ),
         });
     }, [navigation]);
 
-    const handleNumBlocksChange = (text: string) => {
-        const newNumBlocks = Number(text);
-        setNumBlocks(newNumBlocks);
-        
-        const currentBlocks = [...blocks];
-        if (newNumBlocks > currentBlocks.length) {
-            for (let i = currentBlocks.length; i < newNumBlocks; i++) {
-                currentBlocks.push({ targetArea: 'Top Right', shotsPlanned: '' });
-            }
-        } else {
-            currentBlocks.splice(newNumBlocks);
-        }
-        setBlocks(currentBlocks);
-    };
-
     const handleBlockChange = (index: number, field: string, value: string) => {
         const updatedBlocks = blocks.map((block, i) => {
             if (i === index) {
+                // For shotsPlanned, only allow numbers
+                if (field === 'shotsPlanned') {
+                    return { ...block, [field]: value.replace(/[^0-9]/g, '') };
+                }
                 return { ...block, [field]: value };
             }
             return block;
         });
         setBlocks(updatedBlocks);
     };
+    
+    const addBlock = () => {
+        setBlocks([...blocks, { targetArea: 'Top Right', shotsPlanned: '' }]);
+    };
+
+    const removeBlock = (index: number) => {
+        if (blocks.length > 1) { // Prevent removing the last block
+            const updatedBlocks = blocks.filter((_, i) => i !== index);
+            setBlocks(updatedBlocks);
+        }
+    };
+
 
     const handleCreateSession = async () => {
+        // Validate that all blocks have shots planned
+        if (blocks.some(block => !block.shotsPlanned || parseInt(block.shotsPlanned, 10) === 0)) {
+            alert("Please enter a valid number of shots for all blocks.");
+            return;
+        }
+
         try {
             const response = await fetch(`http://127.0.0.1:4949/user/${user?.UserID}/sessions`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ UserID: user?.UserID, blocks: blocks }),
+                body: JSON.stringify({ blocks: blocks }),
             });
 
             if (!response.ok) {
-                throw new Error('Failed to create session');
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to create session');
             }
 
-            const result = await response.json();
-            console.log('Session Created:', result);
+            const newSession = await response.json();
+            const sessionID = newSession[0];
 
-            try {
-                const sessionResponse = await fetch(`http://127.0.0.1:4949/user/${user?.UserID}/sessions`);
-                const sessions = await sessionResponse.json();
-            
-              
-                    const SessionID = sessions[sessions.length-1][0];  // Accessing the last session
-                 
-                    router.push({
-                        pathname: "/ActiveSession",
-                        params: { SessionID }
-                    });
-            } catch (error) {
-                console.error(error);
-            }
+            router.replace({
+                pathname: "/ActiveSession",
+                params: { SessionID: sessionID }
+            });
+
         } catch (error) {
             console.error('Error creating session:', error);
+            alert(`Error: ${error}`);
         }
     };
 
     const renderBlockInputs = () => {
-        const blockInputs = [];
-        for (let i = 0; i < numBlocks; i++) {
-            blockInputs.push(
-                <View key={i} style={styles.blockContainer}>
+        return blocks.map((block, i) => (
+            <View key={i} style={styles.blockContainer}>
+                <View style={styles.blockHeader}>
                     <Text style={styles.blockTitle}>Block {i + 1}</Text>
-                    
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Target Area</Text>
-                        <TouchableOpacity
-                            style={styles.input}
-                            onPress={() => {
-                                setSelectedBlockIndex(i);
-                                setModalVisible(true);
-                            }}
-                        >
-                            <Text style={styles.inputText}>{blocks[i]?.targetArea}</Text>
+                    {blocks.length > 1 && (
+                         <TouchableOpacity onPress={() => removeBlock(i)}>
+                            <Ionicons name="trash-bin-outline" size={22} color="#E74C3C" />
                         </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Shots Planned</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={blocks[i]?.shotsPlanned}
-                            onChangeText={(text) => handleBlockChange(i, 'shotsPlanned', text)}
-                            keyboardType="numeric"
-                            placeholder="Enter shots planned"
-                            placeholderTextColor="#aaa"
-                        />
-                    </View>
+                    )}
                 </View>
-            );
-        }
-        return blockInputs;
+                
+                {/* Target Area Input */}
+                <Text style={styles.label}>Target Area</Text>
+                <TouchableOpacity
+                    style={styles.pickerInput}
+                    onPress={() => {
+                        setSelectedBlockIndex(i);
+                        setModalVisible(true);
+                    }}
+                >
+                    <Text style={styles.inputText}>{block.targetArea}</Text>
+                    <Ionicons name="chevron-down" size={20} color="#F1C40F" />
+                </TouchableOpacity>
+
+                {/* Shots Planned Input */}
+                <Text style={styles.label}>Shots Planned</Text>
+                <TextInput
+                    style={styles.input}
+                    value={block.shotsPlanned}
+                    onChangeText={(text) => handleBlockChange(i, 'shotsPlanned', text)}
+                    keyboardType="number-pad"
+                    placeholder="e.g., 25"
+                    placeholderTextColor="#888"
+                />
+            </View>
+        ));
     };
 
     const handleTargetAreaSelect = (area: string) => {
         if (selectedBlockIndex !== null) {
             handleBlockChange(selectedBlockIndex, 'targetArea', area);
             setModalVisible(false);
+            setSelectedBlockIndex(null);
         }
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <Text style={styles.header}>Create a New Session</Text>
-            <View style={styles.inputContainer}>
-                <Text style={styles.label}>Number of Blocks</Text>
-                <TextInput
-                    style={styles.input}
-                    value={String(numBlocks)}
-                    onChangeText={(text) => handleNumBlocksChange(text)}
-                    keyboardType="numeric"
-                    placeholder="Enter number of blocks"
-                    placeholderTextColor="#aaa"
-                />
-            </View>
-
-            {renderBlockInputs()}
-
-            <TouchableOpacity style={styles.createButton} onPress={handleCreateSession}>
-                <Ionicons name="checkmark-circle" size={24} color="#fff" />
-                <Text style={styles.createButtonText}>Start Session</Text>
-            </TouchableOpacity>
-
-            {/* Modal for target area selection */}
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <FlatList
-                            data={targetAreas}
-                            keyExtractor={(item, index) => index.toString()}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    style={styles.modalItem}
-                                    onPress={() => handleTargetAreaSelect(item)}
-                                >
-                                    <Text style={styles.modalItemText}>{item}</Text>
-                                </TouchableOpacity>
-                            )}
-                        />
-                    </View>
+        <KeyboardAvoidingView 
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.container}
+            keyboardVerticalOffset={90}
+        >
+            <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={styles.headerContainer}>
+                    <Text style={styles.header}>Plan Your Practice</Text>
+                    <Text style={styles.subHeader}>Define your targets and shot counts for this session.</Text>
                 </View>
-            </Modal>
-        </ScrollView>
+
+                {renderBlockInputs()}
+
+                <TouchableOpacity style={styles.addBlockButton} onPress={addBlock}>
+                    <Ionicons name="add" size={22} color="#F1C40F" />
+                    <Text style={styles.addBlockButtonText}>Add Another Block</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.createButton} onPress={handleCreateSession}>
+                    <Ionicons name="rocket-outline" size={28} color="#121212" />
+                    <Text style={styles.createButtonText}>Start Session</Text>
+                </TouchableOpacity>
+
+                {/* Modal for target area selection */}
+                <Modal
+                    animationType="fade"
+                    transparent={true}
+                    visible={modalVisible}
+                    onRequestClose={() => setModalVisible(false)}
+                >
+                    <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPressOut={() => setModalVisible(false)}>
+                        <View style={styles.modalContainer}>
+                            <FlatList
+                                data={targetAreas}
+                                keyExtractor={(item) => item}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        style={styles.modalItem}
+                                        onPress={() => handleTargetAreaSelect(item)}
+                                    >
+                                        <Text style={styles.modalItemText}>{item}</Text>
+                                    </TouchableOpacity>
+                                )}
+                            />
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
         backgroundColor: "#121212",
+        paddingHorizontal: 20,
+    },
+    headerContainer: {
+        paddingTop: 20,
+        paddingBottom: 20,
     },
     header: {
-        fontSize: 24,
+        fontSize: 32,
         fontWeight: "bold",
-        color: "#F1C40F",
-        marginBottom: 20,
+        color: "#FFFFFF",
     },
-    inputContainer: {
+    subHeader: {
+        fontSize: 18,
+        color: '#B0B0B0',
+        marginTop: 4,
+    },
+    blockContainer: {
+        backgroundColor: '#1E1E1E',
+        borderRadius: 16,
+        padding: 20,
         marginBottom: 15,
+    },
+    blockHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    blockTitle: {
+        fontSize: 20,
+        fontWeight: "bold",
+        color: "#FFFFFF",
     },
     label: {
         fontSize: 16,
-        fontWeight: "500",
-        marginBottom: 5,
-        color: "#F1C40F",
+        color: "#B0B0B0",
+        marginBottom: 8,
     },
     input: {
-        height: 40,
-        borderColor: "#F1C40F",
-        borderWidth: 1,
-        marginBottom: 10,
-        width: "100%",
-        paddingHorizontal: 10,
-        color: "#F1C40F",
-        justifyContent: "center"
+        backgroundColor: '#2C2C2C',
+        height: 50,
+        borderRadius: 12,
+        paddingHorizontal: 15,
+        fontSize: 16,
+        color: "#FFFFFF",
+        marginBottom: 15,
+    },
+    pickerInput: {
+        backgroundColor: '#2C2C2C',
+        height: 50,
+        borderRadius: 12,
+        paddingHorizontal: 15,
+        color: "#FFFFFF",
+        flexDirection: 'row',
+        justifyContent: "space-between",
+        alignItems: 'center',
+        marginBottom: 15,
     },
     inputText: {
         fontSize: 16,
-        color: "#F1C40F",
+        color: "#FFFFFF",
     },
-    blockContainer: {
-        marginBottom: 25,
+    addBlockButton: {
+        backgroundColor: '#1E1E1E',
+        borderColor: '#333333',
+        borderWidth: 1.5,
+        borderRadius: 12,
+        paddingVertical: 15,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 10,
+        marginBottom: 30,
     },
-    blockTitle: {
-        fontSize: 18,
-        fontWeight: "600",
-        color: "#F1C40F",
-        marginBottom: 10,
+    addBlockButtonText: {
+        color: '#F1C40F',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginLeft: 10,
     },
     createButton: {
-        flexDirection: "row",
-        alignItems: "center",
         backgroundColor: "#F1C40F",
-        paddingVertical: 15,
-        borderRadius: 5,
+        borderRadius: 12,
+        paddingVertical: 18,
+        flexDirection: "row",
         justifyContent: "center",
-        marginTop: 30,
+        alignItems: "center",
+        marginBottom: 40,
     },
     createButtonText: {
-        color: "#fff",
-        fontSize: 18,
+        color: "#121212",
+        fontSize: 20,
+        fontWeight: "bold",
         marginLeft: 10,
     },
     modalOverlay: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        backgroundColor: "rgba(0, 0, 0, 0.7)",
     },
     modalContainer: {
-        width: "80%",
-        backgroundColor: "#121212",
-        padding: 20,
-        borderRadius: 10,
+        width: "85%",
+        backgroundColor: "#1E1E1E",
+        borderRadius: 16,
+        padding: 10,
+        maxHeight: '60%',
     },
     modalItem: {
-        padding: 15,
+        paddingVertical: 18,
+        paddingHorizontal: 15,
         borderBottomWidth: 1,
-        borderBottomColor: "#F1C40F",
+        borderBottomColor: "#333333",
     },
     modalItemText: {
-        fontSize: 16,
-        color: "#F1C40F",
+        fontSize: 18,
+        color: "#FFFFFF",
+        textAlign: 'center'
     },
 });
 
