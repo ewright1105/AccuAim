@@ -92,56 +92,15 @@ def get_block_made_shots(block_id):
         for shot in result
     ]
 
-def get_block_missed_shots(block_id):
+def record_new_shot(block_id):
     """
-    Gets all missed shots for a given block ID from the database.
-
-    Args:
-        block_id (int): The block ID to fetch missed shots for.
-
-    Returns:
-        list: A list of dictionaries containing missed shot details.
+    Records a new MADE shot in the database for a given block.
+    The existence of a row in the 'shots' table signifies a made shot.
     """
-    sql = """
-    SELECT ShotID, BlockID, ShotTime, ShotPositionX, ShotPositionY, Result
-    FROM shots
-    WHERE BlockID = %s AND Result = 'Missed'
-    ORDER BY ShotTime;
-    """
-    result = exec_get_all(sql, (block_id,))
-    return [
-        {
-            'ShotID': shot[0],
-            'BlockID': shot[1],
-            'ShotTime': shot[2],
-            'ShotPositionX': shot[3],
-            'ShotPositionY': shot[4],
-            'Result': shot[5]
-        }
-        for shot in result
-    ]
-
-def record_new_shot(block_id, shot_position_x, shot_position_y, result):
-    """
-    Records a new shot in the database for a given block.
-
-    Args:
-        block_id (int): The block ID to associate the shot with.
-        shot_time (str): The timestamp when the shot was taken.
-        shot_position_x (float): The X coordinate of the shot.
-        shot_position_y (float): The Y coordinate of the shot.
-        result (str): The result of the shot, either 'Made' or 'Missed'.
-        
-    Returns:
-        str: Success or error message.
-    """
-    sql = """
-    INSERT INTO shots (BlockID, ShotTime, ShotPositionX, ShotPositionY, Result)
-    VALUES (%s, CURRENT_TIMESTAMP, %s, %s, %s);
-    """
+    sql = "INSERT INTO shots (BlockID) VALUES (%s);"
     try:
-        exec_commit(sql, (block_id, shot_position_x, shot_position_y, result))
-        return "Shot recorded successfully."
+        exec_commit(sql, (block_id,))
+        return "Made shot recorded successfully."
     except Exception as e:
         return f"An error occurred while recording the shot: {e}"
     
@@ -464,61 +423,47 @@ def get_session_blocks(session_id):
     
     return session_blocks
 
+# In accuaim_db.py
+
 def get_session_data(user_id, session_id):
     """
-    Retrieves important session data: made shots, missed shots, shooting percentage, and total shots taken.
-    Ensures that the session belongs to the given user.
-
-    Args:
-        user_id (int): The user ID to check ownership.
-        session_id (int): The session ID to fetch data for.
-    
-    Returns:
-        dict: A dictionary containing session data (made shots, missed shots, etc.) if valid, 
-              otherwise a message indicating no access or invalid session.
+    Retrieves important session data. Now includes block_stats for the new UI.
     """
-    # Check if the session belongs to the user
-    sql = """
-    SELECT * FROM practice_sessions 
-    WHERE SessionID = %s AND UserID = %s;
-    """
-    session_exists = exec_get_one(sql, (session_id, user_id))
+    # ... (ownership check remains the same)
+    sql_check = "SELECT * FROM practice_sessions WHERE SessionID = %s AND UserID = %s;"
+    session_exists = exec_get_one(sql_check, (session_id, user_id))
     
     if not session_exists:
-        # If session doesn't belong to the user, return an error message
         return {"error": "This session does not belong to the user or does not exist."}
     
+    # This is the function that correctly calculates all block stats
     block_stats = get_session_block_stats(session_id)
-    all_shots = []
-    total_shots = 0
+    
+    # Initialize counters
     made_shots_count = 0
-    missed_shots_count = 0
+    total_planned_shots = 0
     
-    # Get all shots for the session
+    # Calculate totals from the block_stats
     for block in block_stats:
-       total_shots += block['ShotsPlanned']
+       total_planned_shots += block['ShotsPlanned']
        made_shots_count += block['MadeShots']
-       missed_shots_count += block ['MissedShots']
-       all_shots.append(get_block_shots(block['BlockID']))
-       
     
- 
-    # Calculate shooting percentage (handle division by zero)
-    if total_shots == 0:
-        shooting_percentage = 0.0
-    else:
-        shooting_percentage = (made_shots_count / total_shots) * 100
+    # Calculate derived stats
+    missed_shots_count = total_planned_shots - made_shots_count
+    shooting_percentage = (made_shots_count / total_planned_shots * 100) if total_planned_shots > 0 else 0.0
     
-    # Prepare the response as a dictionary, ordering the keys as per your requirement
+    # Build the final response dictionary
     session_data = {
-        'user_id': user_id,
         'session_id': session_id,
         'made_shots': made_shots_count,
         'missed_shots': missed_shots_count,
-        'total_shots': total_shots,
-        'shooting_percentage': f"{shooting_percentage:.2f}%",
-        'shots': all_shots
+        'total_shots': total_planned_shots, # Renamed for clarity
+        'shooting_percentage': f"{shooting_percentage:.1f}%",
+        'block_stats': block_stats  # <-- ADD THIS KEY. This is the crucial fix.
+        # 'shots' array is no longer needed for this screen, so it's removed.
     }
+    
+    return session_data
     
     return session_data
 def login(email, password):
@@ -604,42 +549,12 @@ def get_all_blocks():
     
     return result
 
-def get_target_area_for_block(block_id):
-    """
-    Retrieves the target area associated with a specific block.
-
-    Args:
-        block_id (int): The ID of the block to retrieve the target area for.
-
-    Returns:
-        dict: A dictionary containing block and target area details.
-    """
-    sql = """
-    SELECT b.BlockID, ta.AreaName
-    FROM blocks b
-    JOIN target_areas ta ON b.TargetAreaID = ta.TargetAreaID
-    WHERE b.BlockID = %s;
-    """
-    
-    result = exec_get_one(sql, (block_id,))
-    
-    if result:
-        return {"BlockID": result[0], "TargetArea": result[1]}
-    return {"error": "Block not found or has no associated target area."}
-
-
 def get_block_shots(block_id):
     """
-    Gets all shots for a given block ID from the database.
-
-    Args:
-        block_id (int): The block ID to fetch shots for.
-
-    Returns:
-        list: A list of dictionaries containing shot details.
+    Gets all made shots for a given block ID from the database.
     """
     sql = """
-    SELECT ShotID, BlockID, ShotTime, ShotPositionX, ShotPositionY, Result
+    SELECT ShotID, BlockID, ShotTime
     FROM shots
     WHERE BlockID = %s
     ORDER BY ShotTime;
@@ -650,29 +565,20 @@ def get_block_shots(block_id):
             'ShotID': shot[0],
             'BlockID': shot[1],
             'ShotTime': shot[2],
-            'ShotPositionX': shot[3],
-            'ShotPositionY': shot[4],
-            'Result': shot[5]
         }
         for shot in result
     ]
 def get_session_block_stats(session_id):
     """
-    Gets shooting statistics for each block in a session, focusing on made, missed, and planned shots.
-
-    Args:
-        session_id (int): The session ID to get block stats for.
-
-    Returns:
-        list: A list of dictionaries containing block statistics.
+    Gets shooting statistics for each block in a session.
+    Missed shots are now calculated (ShotsPlanned - MadeShots).
     """
     sql = """
     SELECT 
         b.BlockID,
         b.TargetArea,
         b.ShotsPlanned,
-        COUNT(CASE WHEN s.Result = 'Made' THEN 1 END) as MadeShots,
-        COUNT(CASE WHEN s.Result = 'Missed' THEN 1 END) as MissedShots
+        COUNT(s.ShotID) as MadeShots
     FROM blocks b
     LEFT JOIN shots s ON b.BlockID = s.BlockID
     WHERE b.SessionID = %s
@@ -680,13 +586,15 @@ def get_session_block_stats(session_id):
     ORDER BY b.BlockID;
     """
     result = exec_get_all(sql, (session_id,))
+    
+    # Calculate missed shots in Python
     return [
         {
             'BlockID': block[0],
-            'TargetArea': block[1],
+            'TargetArea': str(block[1]), # Cast ENUM to string
             'ShotsPlanned': block[2],
-            'MadeShots': block[3] or 0,  # Convert None to 0
-            'MissedShots': block[4] or 0  # Convert None to 0
+            'MadeShots': block[3] or 0,
+            'MissedShots': block[2] - (block[3] or 0) # The new calculation
         }
         for block in result
     ]
@@ -709,30 +617,34 @@ def add_blocks(blocks, session_id):
         
     
 def create_session(user_id, blocks):
-        """
-        Adds session to database correlated with user
-        Does not have 
+    """
+    Adds session to database correlated with user.
+    The session start time is automatically set to the current time.
 
-        Args:
-            user_id (int): user to link new session to
-        
-        Returns:
-            New Session detais"""
-            
-        #verify user exists
-        if (get_user(user_id) == "User does not exist"):
-            return "User does not exist"
-        
-        sql = """INSERT INTO practice_sessions (UserID) VALUES (%s);"""   
-        
-        exec_commit(sql, (user_id,)) 
+    Args:
+        user_id (int): The user to link the new session to.
+        blocks (list): A list of block dictionaries to add to the session.
+    
+    Returns:
+        tuple: The new session's details, or an error string.
+    """
+    # Verify user exists
+    if get_user(user_id) == "User does not exist":
+        return "User does not exist"
+    
+    # THE FIX: Include SessionStart in the INSERT statement and use CURRENT_TIMESTAMP
+    # to provide a non-null value for it.
+    sql = """INSERT INTO practice_sessions (UserID, SessionStart) VALUES (%s, CURRENT_TIMESTAMP);"""   
+    
+    exec_commit(sql, (user_id,)) 
 
-        sessions = get_user_sessions(user_id)
-        new_session = sessions[-1]
+    sessions = get_user_sessions(user_id)
+    new_session = sessions[-1]
 
-        add_blocks(blocks, new_session[0])
-        
-        return(new_session)
+    add_blocks(blocks, new_session[0])
+    
+    return new_session
+
     
 def update_session_end_time(SessionID):
     """
@@ -749,61 +661,61 @@ def update_session_end_time(SessionID):
     
     return "session updated correctly"
 
-def get_leaderboard_stats():
+# In accuaim_db.py
+
+# In accuaim_db.py
+
+def get_leaderboard_stats(sort_by='accuracy'):
     """
-    Retrieves the leaderboard statistics for all users, including their total sessions, 
-    total shots, and average shooting percentage. This version is corrected to avoid
-    inflating the 'TotalPlanned' count.
-    
-    Returns:
-        list: A list of dictionaries containing user statistics for the leaderboard.
+    Retrieves the leaderboard statistics for all users, sorted by a given parameter.
+    This version wraps the main query in a CTE to allow sorting by aliased columns.
     """
-    # This corrected query uses Common Table Expressions (CTEs) to calculate
-    # planned and made shots separately before joining, which prevents the fan-out bug.
+    if sort_by not in ['accuracy', 'made', 'planned']:
+        sort_by = 'accuracy'
+        
     sql = """
     WITH UserPlanned AS (
-        -- First, get the correct sum of planned shots for each user.
-        -- This query does NOT join to the shots table.
-        SELECT
-            ps.UserID,
-            SUM(b.ShotsPlanned) AS TotalPlanned
+        SELECT ps.UserID, SUM(b.ShotsPlanned) AS TotalPlanned
         FROM practice_sessions ps
         JOIN blocks b ON ps.SessionID = b.SessionID
         GROUP BY ps.UserID
     ),
     UserMade AS (
-        -- Second, count the made shots for each user.
-        SELECT
-            ps.UserID,
-            COUNT(s.ShotID) AS TotalMade
+        SELECT ps.UserID, COUNT(s.ShotID) AS TotalMade
         FROM practice_sessions ps
         JOIN blocks b ON ps.SessionID = b.SessionID
         JOIN shots s ON b.BlockID = s.BlockID
-        WHERE s.Result = 'Made'
         GROUP BY ps.UserID
+    ),
+    -- THIS IS THE NEW CTE WRAPPER
+    LeaderboardData AS (
+        SELECT
+            u.UserID,
+            u.FullName,
+            COALESCE(um.TotalMade, 0) AS TotalMade,
+            COALESCE(up.TotalPlanned, 0) AS TotalPlanned,
+            ROUND(
+                COALESCE(um.TotalMade, 0) * 100.0 / NULLIF(COALESCE(up.TotalPlanned, 0), 0), 2
+            ) AS AccuracyPercent
+        FROM users u
+        LEFT JOIN UserPlanned up ON u.UserID = up.UserID
+        LEFT JOIN UserMade um ON u.UserID = um.UserID
+        WHERE COALESCE(up.TotalPlanned, 0) > 0
     )
-    -- Finally, join the pre-aggregated data to get the final result.
-    SELECT
-        u.UserID,
-        u.FullName,
-        COALESCE(um.TotalMade, 0) AS TotalMade,
-        COALESCE(up.TotalPlanned, 0) AS TotalPlanned,
-        ROUND(
-            COALESCE(um.TotalMade, 0) * 100.0 / NULLIF(COALESCE(up.TotalPlanned, 0), 0),
-            2
-        ) AS AccuracyPercent
-    FROM users u
-    -- Use LEFT JOINs to include users who may have planned but not made any shots.
-    LEFT JOIN UserPlanned up ON u.UserID = up.UserID
-    LEFT JOIN UserMade um ON u.UserID = um.UserID
-    WHERE COALESCE(up.TotalPlanned, 0) > 0 -- Only show users with planned shots
-    ORDER BY TotalMade DESC, u.UserID ASC -- Order by made shots, then UserID as a tie-breaker
+    -- FINAL SELECT FROM THE WRAPPER CTE
+    SELECT *
+    FROM LeaderboardData
+    ORDER BY
+        CASE WHEN %(sort_by)s = 'accuracy' THEN AccuracyPercent END DESC,
+        CASE WHEN %(sort_by)s = 'made' THEN TotalMade END DESC,
+        CASE WHEN %(sort_by)s = 'planned' THEN TotalPlanned END DESC,
+        TotalMade DESC
     LIMIT 100;
     """
     
-    result = exec_get_all(sql)
+    result = exec_get_all(sql, {'sort_by': sort_by})
     
-    # The Python processing part remains the same.
+    # No changes needed in the Python processing part
     return [
         {
             'UserID': row[0],
@@ -814,17 +726,11 @@ def get_leaderboard_stats():
         }
         for row in result
     ]
-# Add this new function to your Python database/API file
-
-# In your Python database/API file
-
-# In your Python database/api file
 
 def get_user_dashboard_stats(user_id):
     """
-    Calculates all stats for the dashboard with corrected logic to prevent data inflation.
+    Calculates all stats for the dashboard, now using the simplified shots table.
     """
-    # This corrected query uses separate CTEs for each aggregation to get accurate numbers.
     sql = """
     WITH RECURSIVE PracticeDays AS (
         SELECT DISTINCT DATE(SessionStart) AS practice_date
@@ -837,15 +743,15 @@ def get_user_dashboard_stats(user_id):
         SELECT pd.practice_date, s.streak_length + 1 FROM StreakCTE s
         JOIN PracticeDays pd ON pd.practice_date = s.practice_date - INTERVAL '1 day'
     ),
-    -- Correctly calculated stats in separate, non-interfering CTEs
     UserPlanned AS (
         SELECT SUM(b.ShotsPlanned) AS TotalPlanned FROM practice_sessions ps
         JOIN blocks b ON ps.SessionID = b.SessionID WHERE ps.UserID = %(user_id)s
     ),
     UserMade AS (
+        -- CORRECTED: Removed "AND s.Result = 'Made'"
         SELECT COUNT(s.ShotID) AS TotalMade FROM practice_sessions ps
         JOIN blocks b ON ps.SessionID = b.SessionID
-        JOIN shots s ON b.BlockID = s.BlockID AND s.Result = 'Made'
+        JOIN shots s ON b.BlockID = s.BlockID 
         WHERE ps.UserID = %(user_id)s
     ),
     LastSession AS (
@@ -857,11 +763,12 @@ def get_user_dashboard_stats(user_id):
         WHERE b.SessionID = (SELECT SessionID FROM LastSession)
     ),
     LastSessionMade AS (
+        -- CORRECTED: Removed "AND s.Result = 'Made'"
         SELECT COUNT(s.ShotID) AS Made FROM blocks b
-        JOIN shots s ON b.BlockID = s.BlockID AND s.Result = 'Made'
+        JOIN shots s ON b.BlockID = s.BlockID
         WHERE b.SessionID = (SELECT SessionID FROM LastSession)
     )
-    -- Final SELECT to combine all correctly calculated stats
+    -- Final SELECT remains the same
     SELECT
         (SELECT CASE WHEN MAX(practice_date) >= CURRENT_DATE - INTERVAL '1 day' THEN MAX(streak_length)
                 ELSE 0 END FROM StreakCTE) AS streak,
@@ -886,7 +793,6 @@ def get_user_dashboard_stats(user_id):
             "lastSessionAccuracy": f"{result[4] or 0:.1f}%" if result[4] is not None else "N/A"
         }
     
-    # Return default values if the user has no stats yet
     return {
         "streak": 0, "totalMade": 0, "totalPlanned": 0, 
         "allTimeAccuracy": "0.0%", "lastSessionAccuracy": "N/A"
@@ -895,4 +801,3 @@ if __name__ == "__main__":
     rebuild_tables()
 
     
-
