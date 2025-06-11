@@ -6,12 +6,12 @@ import {
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
-  Button,
 } from "react-native";
 import { useAuth } from "./AuthContext";
 import { useNavigation, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
-// Session interface
+// Session interface (no changes needed)
 interface Session {
   sessionId: number;
   userId: number;
@@ -27,18 +27,23 @@ export default function UserSessions() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isFirstLoad, setIsFirstLoad] = useState(true); // To check if it's the initial empty state
 
+  // --- Header Setup ---
   useLayoutEffect(() => {
     navigation.setOptions({
       title: "My Practice Sessions",
+      headerStyle: { backgroundColor: "#121212" },
+      headerTitleStyle: { color: "#FFFFFF" },
       headerLeft: () => (
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
+          <Ionicons name="arrow-back" size={24} color="#F1C40F" />
         </TouchableOpacity>
       ),
     });
   }, [navigation]);
 
+  // --- Data Fetching ---
   useEffect(() => {
     if (user) {
       fetchUserSessions(user.UserID);
@@ -66,6 +71,7 @@ export default function UserSessions() {
         setSessions(formatted);
       } else {
         setError("You haven't recorded any sessions yet.");
+        setIsFirstLoad(true); // Set flag for empty state
       }
     } catch (err) {
       console.error("Fetch error:", err);
@@ -75,100 +81,125 @@ export default function UserSessions() {
     }
   };
 
+  // --- Helper Functions ---
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
-      weekday: "short",
-      year: "numeric",
-      month: "short",
+      month: "long",
       day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      year: "numeric",
     });
   };
 
   const calculateDuration = (start: string, end: string) => {
+    if (!end) return 'In Progress'; // Handle sessions that haven't ended
     const s = new Date(start), e = new Date(end);
     const mins = Math.floor((e.getTime() - s.getTime()) / 60000);
+    if (mins < 1) return "< 1 min";
     const h = Math.floor(mins / 60), m = mins % 60;
-    return `${h}h ${m}m`;
+    return `${h > 0 ? `${h}h ` : ''}${m}m`;
   };
 
+  // --- Render Logic ---
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
         <ActivityIndicator size="large" color="#F1C40F" />
-        <Text style={styles.loadingText}>Loading your sessions...</Text>
+        <Text style={styles.messageText}>Loading your sessions...</Text>
+      </View>
+    );
+  }
+
+  if (error && isFirstLoad) {
+    // Show a friendly empty state if there are no sessions
+    return (
+      <View style={styles.centeredContainer}>
+        <Ionicons name="archive-outline" size={60} color="#666" />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity
+          style={styles.ctaButton}
+          onPress={() => router.push('/CreateSession')}
+        >
+            <Ionicons name="add-circle" size={20} color="#121212" style={{marginRight: 10}}/>
+            <Text style={styles.ctaButtonText}>Start Your First Session</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   if (error) {
-    return (
-      <View style={styles.centeredContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
-    );
+      // Show a generic error for other issues
+      return (
+          <View style={styles.centeredContainer}><Text style={styles.errorText}>{error}</Text></View>
+      )
   }
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.header}>Your Practice Sessions</Text>
       {sessions.map((session) => (
-        <View key={session.sessionId} style={styles.sessionItem}>
-          <Text style={styles.sessionText}>📅 {formatDate(session.startTime)}</Text>
-          <Text style={styles.sessionText}>
-            🕒 Duration: {calculateDuration(session.startTime, session.endTime)}
-          </Text>
-          <TouchableOpacity
-            onPress={() => router.push(`/user/sessions/${session.sessionId}`)}
-            style={styles.viewButton}
-          >
-            <Text style={styles.buttonText}>View Details</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          key={session.sessionId}
+          style={styles.sessionCard}
+          onPress={() => router.push(`/user/sessions/${session.sessionId}`)}
+        >
+          <View style={styles.sessionInfoContainer}>
+            <View style={styles.sessionInfoRow}>
+              <Ionicons name="calendar-outline" size={18} color="#B0B0B0" style={styles.icon} />
+              <Text style={styles.sessionDate}>{formatDate(session.startTime)}</Text>
+            </View>
+            <View style={styles.sessionInfoRow}>
+              <Ionicons name="time-outline" size={18} color="#B0B0B0" style={styles.icon} />
+              <Text style={styles.sessionDuration}>
+                {calculateDuration(session.startTime, session.endTime)}
+              </Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward-outline" size={24} color="#F1C40F" />
+        </TouchableOpacity>
       ))}
     </ScrollView>
   );
 }
 
+// --- Styles ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#121212",
-    paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingHorizontal: 15,
+    paddingTop: 20,
   },
-  header: {
-    fontSize: 22,
-    fontWeight: "600",
-    color: "#F1C40F",
-    marginBottom: 20,
+  headerButton: {
+    marginLeft: 15,
   },
-  sessionItem: {
-    backgroundColor: "#1e1e1e",
-    padding: 15,
-    borderRadius: 10,
+  sessionCard: {
+    backgroundColor: "#1E1E1E",
+    borderRadius: 12,
+    padding: 20,
     marginBottom: 15,
-    borderWidth: 1,
-    borderColor: "#2c2c2c",
-  },
-  sessionText: {
-    fontSize: 16,
-    color: "#fff",
-    marginBottom: 6,
-  },
-  viewButton: {
-    marginTop: 8,
-    backgroundColor: "#F1C40F",
-    paddingVertical: 8,
-    borderRadius: 6,
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
   },
-  buttonText: {
-    color: "#121212",
+  sessionInfoContainer: {
+    flex: 1,
+  },
+  sessionInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  icon: {
+    marginRight: 10,
+  },
+  sessionDate: {
+    fontSize: 18,
     fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  sessionDuration: {
     fontSize: 16,
+    color: "#B0B0B0",
   },
   centeredContainer: {
     flex: 1,
@@ -177,21 +208,29 @@ const styles = StyleSheet.create({
     backgroundColor: "#121212",
     padding: 20,
   },
-  loadingText: {
-    marginTop: 10,
+  messageText: {
+    marginTop: 15,
     color: "#F1C40F",
     fontSize: 16,
   },
   errorText: {
-    color: "#F1C40F",
+    color: "#B0B0B0",
     fontSize: 18,
     textAlign: "center",
+    marginTop: 20,
+    marginBottom: 25,
   },
-  backButton: {
-    marginLeft: 15,
+  ctaButton: {
+    backgroundColor: '#F1C40F',
+    borderRadius: 12,
+    paddingVertical: 15,
+    paddingHorizontal: 25,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  backArrow: {
-    color: "#F1C40F",
-    fontSize: 26,
+  ctaButtonText: {
+    color: '#121212',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

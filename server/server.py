@@ -12,6 +12,8 @@ from api.resources.session_details import *
 from api.resources.change_password import *
 from api.resources.blocks import *
 from api.resources.active_session import *
+from api.resources.leaderboard import *
+from api.resources.dashboard import *
 
 app = Flask(__name__)
 CORS(app)
@@ -25,6 +27,8 @@ api.add_resource(SessionDetails, '/user/<int:UserID>/sessions/<int:SessionID>')
 api.add_resource(ChangePassword, '/user/<int:UserID>/change-password')
 api.add_resource(Blocks, '/blocks')
 api.add_resource(ActiveSession, '/user/<int:UserID>/sessions/<int:SessionID>/active-session')
+api.add_resource(Leaderboard, '/leaderboard')
+api.add_resource(Dashboard, "/user/<int:UserID>/dashboard")
 
 
 if __name__ == "__main__":

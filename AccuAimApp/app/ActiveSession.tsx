@@ -89,7 +89,7 @@ export default function ActiveSession() {
                     console.error("Error during PUT request:", error);
                     // Optionally show an alert or update your UI with the error
                 }
-            router.push("/LandingScreen");
+            router.push("/Dashboard"); // Navigate to the Dashboard after ending the session
             }}
         >
             <Text style={styles.buttonText}>End Session</Text>

@@ -7,7 +7,7 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState<string>(''); // Email state
   const [password, setPassword] = useState<string>(''); // Password state
   const [isLoading, setIsLoading] = useState<boolean>(false); // Loading state
-  const { login } = useAuth(); // Use the login function from AuthContext
+  const {login } = useAuth(); // Use the login function from AuthContext
   const router = useRouter();
   const navigation = useNavigation();
 
@@ -52,7 +52,7 @@ const Login: React.FC = () => {
         Alert.alert("Error", "Invalid email or password. Please try again.");
       } else if (data.UserID) {
         login({UserID: data.UserID, email: data.email, name: data.name });
-        router.push('/LandingScreen');
+        router.push('/Dashboard');
       } else {
         Alert.alert('Error', 'Invalid response from server.');
       }

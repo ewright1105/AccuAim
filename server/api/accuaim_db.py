@@ -749,6 +749,148 @@ def update_session_end_time(SessionID):
     
     return "session updated correctly"
 
+def get_leaderboard_stats():
+    """
+    Retrieves the leaderboard statistics for all users, including their total sessions, 
+    total shots, and average shooting percentage. This version is corrected to avoid
+    inflating the 'TotalPlanned' count.
+    
+    Returns:
+        list: A list of dictionaries containing user statistics for the leaderboard.
+    """
+    # This corrected query uses Common Table Expressions (CTEs) to calculate
+    # planned and made shots separately before joining, which prevents the fan-out bug.
+    sql = """
+    WITH UserPlanned AS (
+        -- First, get the correct sum of planned shots for each user.
+        -- This query does NOT join to the shots table.
+        SELECT
+            ps.UserID,
+            SUM(b.ShotsPlanned) AS TotalPlanned
+        FROM practice_sessions ps
+        JOIN blocks b ON ps.SessionID = b.SessionID
+        GROUP BY ps.UserID
+    ),
+    UserMade AS (
+        -- Second, count the made shots for each user.
+        SELECT
+            ps.UserID,
+            COUNT(s.ShotID) AS TotalMade
+        FROM practice_sessions ps
+        JOIN blocks b ON ps.SessionID = b.SessionID
+        JOIN shots s ON b.BlockID = s.BlockID
+        WHERE s.Result = 'Made'
+        GROUP BY ps.UserID
+    )
+    -- Finally, join the pre-aggregated data to get the final result.
+    SELECT
+        u.UserID,
+        u.FullName,
+        COALESCE(um.TotalMade, 0) AS TotalMade,
+        COALESCE(up.TotalPlanned, 0) AS TotalPlanned,
+        ROUND(
+            COALESCE(um.TotalMade, 0) * 100.0 / NULLIF(COALESCE(up.TotalPlanned, 0), 0),
+            2
+        ) AS AccuracyPercent
+    FROM users u
+    -- Use LEFT JOINs to include users who may have planned but not made any shots.
+    LEFT JOIN UserPlanned up ON u.UserID = up.UserID
+    LEFT JOIN UserMade um ON u.UserID = um.UserID
+    WHERE COALESCE(up.TotalPlanned, 0) > 0 -- Only show users with planned shots
+    ORDER BY TotalMade DESC, u.UserID ASC -- Order by made shots, then UserID as a tie-breaker
+    LIMIT 100;
+    """
+    
+    result = exec_get_all(sql)
+    
+    # The Python processing part remains the same.
+    return [
+        {
+            'UserID': row[0],
+            'FullName': row[1],
+            'TotalMade': row[2],
+            'TotalPlanned': row[3],
+            'AccuracyPercent': f"{row[4]:.2f}%" if row[4] is not None else "0.00%"
+        }
+        for row in result
+    ]
+# Add this new function to your Python database/API file
+
+# In your Python database/API file
+
+# In your Python database/api file
+
+def get_user_dashboard_stats(user_id):
+    """
+    Calculates all stats for the dashboard with corrected logic to prevent data inflation.
+    """
+    # This corrected query uses separate CTEs for each aggregation to get accurate numbers.
+    sql = """
+    WITH RECURSIVE PracticeDays AS (
+        SELECT DISTINCT DATE(SessionStart) AS practice_date
+        FROM practice_sessions WHERE UserID = %(user_id)s
+    ),
+    StreakCTE AS (
+        SELECT practice_date, 1 AS streak_length FROM PracticeDays
+        WHERE practice_date = (SELECT MAX(practice_date) FROM PracticeDays)
+        UNION ALL
+        SELECT pd.practice_date, s.streak_length + 1 FROM StreakCTE s
+        JOIN PracticeDays pd ON pd.practice_date = s.practice_date - INTERVAL '1 day'
+    ),
+    -- Correctly calculated stats in separate, non-interfering CTEs
+    UserPlanned AS (
+        SELECT SUM(b.ShotsPlanned) AS TotalPlanned FROM practice_sessions ps
+        JOIN blocks b ON ps.SessionID = b.SessionID WHERE ps.UserID = %(user_id)s
+    ),
+    UserMade AS (
+        SELECT COUNT(s.ShotID) AS TotalMade FROM practice_sessions ps
+        JOIN blocks b ON ps.SessionID = b.SessionID
+        JOIN shots s ON b.BlockID = s.BlockID AND s.Result = 'Made'
+        WHERE ps.UserID = %(user_id)s
+    ),
+    LastSession AS (
+        SELECT SessionID FROM practice_sessions
+        WHERE UserID = %(user_id)s ORDER BY SessionStart DESC LIMIT 1
+    ),
+    LastSessionPlanned AS (
+        SELECT SUM(b.ShotsPlanned) AS Planned FROM blocks b
+        WHERE b.SessionID = (SELECT SessionID FROM LastSession)
+    ),
+    LastSessionMade AS (
+        SELECT COUNT(s.ShotID) AS Made FROM blocks b
+        JOIN shots s ON b.BlockID = s.BlockID AND s.Result = 'Made'
+        WHERE b.SessionID = (SELECT SessionID FROM LastSession)
+    )
+    -- Final SELECT to combine all correctly calculated stats
+    SELECT
+        (SELECT CASE WHEN MAX(practice_date) >= CURRENT_DATE - INTERVAL '1 day' THEN MAX(streak_length)
+                ELSE 0 END FROM StreakCTE) AS streak,
+        (SELECT TotalMade FROM UserMade) AS totalMade,
+        (SELECT TotalPlanned FROM UserPlanned) AS totalPlanned,
+        ROUND(
+            (SELECT TotalMade FROM UserMade) * 100.0 / NULLIF((SELECT TotalPlanned FROM UserPlanned), 0),
+        1) AS allTimeAccuracy,
+        ROUND(
+            (SELECT Made FROM LastSessionMade) * 100.0 / NULLIF((SELECT Planned FROM LastSessionPlanned), 0),
+        1) AS lastSessionAccuracy;
+    """
+    
+    result = exec_get_one(sql, {'user_id': user_id})
+    
+    if result and result[0] is not None:
+        return {
+            "streak": result[0],
+            "totalMade": result[1] or 0,
+            "totalPlanned": result[2] or 0,
+            "allTimeAccuracy": f"{result[3] or 0:.1f}%" if result[3] is not None else "N/A",
+            "lastSessionAccuracy": f"{result[4] or 0:.1f}%" if result[4] is not None else "N/A"
+        }
+    
+    # Return default values if the user has no stats yet
+    return {
+        "streak": 0, "totalMade": 0, "totalPlanned": 0, 
+        "allTimeAccuracy": "0.0%", "lastSessionAccuracy": "N/A"
+    }
 if __name__ == "__main__":
     rebuild_tables()
 
