@@ -65,7 +65,7 @@ export default function SessionDetails() {
   const fetchSessionData = async (userId: number, sid: number) => {
     try {
       setLoading(true);
-      const apiUrl = `http://127.0.0.1:4949/user/${userId}/sessions/${sid}`;
+      const apiUrl = `http://172.20.10.6:4949/user/${userId}/sessions/${sid}`;
       const response = await fetch(apiUrl);
 
       if (!response.ok) throw new Error("Failed to fetch session data.");

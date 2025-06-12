@@ -71,7 +71,7 @@ const SignUp: React.FC = () => {
 
     try {
       // NOTE: Assumes a dedicated endpoint for registration, e.g., '/user/register'
-      const response = await fetch('http://127.0.0.1:4949/user/register', {
+      const response = await fetch('http://172.20.10.6:4949/user/register', {
         method: 'POST',
         body: JSON.stringify({ name: trimmedName, email: trimmedEmail, password: trimmedPassword }),
         headers: {

@@ -1,2 +1,4 @@
 db.yml
 __pycache__
+/accuaimapp/ios
+/accuaimapp/android

@@ -43,7 +43,7 @@ export default function Leaderboard() {
       setError(null);
       try {
         // Append the sortBy state as a query parameter to the URL
-        const response = await fetch(`http://127.0.0.1:4949/leaderboard?sort_by=${sortBy}`);
+        const response = await fetch(`http://172.20.10.6:4949/leaderboard?sort_by=${sortBy}`);
         if (!response.ok) throw new Error("Failed to load leaderboard data.");
         
         const data = await response.json();

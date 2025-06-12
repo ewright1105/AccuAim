@@ -67,7 +67,7 @@ const CreateSessionScreen: React.FC = () => {
         }
 
         try {
-            const response = await fetch(`http://127.0.0.1:4949/user/${user?.UserID}/sessions`, {
+            const response = await fetch(`http://172.20.10.6:4949/user/${user?.UserID}/sessions`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ blocks: blocks }),

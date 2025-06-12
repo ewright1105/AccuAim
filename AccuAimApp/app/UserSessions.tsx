@@ -55,7 +55,7 @@ export default function UserSessions() {
 
   const fetchUserSessions = async (userId: string) => {
     try {
-      const response = await fetch(`http://127.0.0.1:4949/user/${userId}/sessions`);
+      const response = await fetch(`http://172.20.10.6:4949/user/${userId}/sessions`);
       if (!response.ok) throw new Error("Could not fetch sessions.");
       const data = await response.json();
 

@@ -41,7 +41,7 @@ export default function ActiveSession() {
         const fetchSessionData = async (userId: number, sessionId: number) => {
         try {
             setLoading(true);
-            const apiUrl = `http://127.0.0.1:4949/user/${userId}/sessions/${sessionId}`;
+            const apiUrl = `http://172.20.10.6:4949/user/${userId}/sessions/${sessionId}`;
             const response = await fetch(apiUrl);
     
             if (!response.ok) {
@@ -71,7 +71,7 @@ export default function ActiveSession() {
             style={styles.button}
             onPress={async () => {
                 try {
-                    const response = await fetch(`http://127.0.0.1:4949/user/${user?.UserID}/sessions/${SessionID}/active-session`, {
+                    const response = await fetch(`http://172.20.10.6:4949/user/${user?.UserID}/sessions/${SessionID}/active-session`, {
                         method: 'PUT',
                         body: JSON.stringify({ SessionID: SessionID }), // Sending SessionID in the body
                         headers: {
