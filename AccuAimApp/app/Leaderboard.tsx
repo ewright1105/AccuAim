@@ -24,7 +24,7 @@ export default function Leaderboard() {
   // --- Header Setup ---
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: "All-Time Accuracy",
+      title: "Leaderboard",
       headerStyle: { backgroundColor: "#121212" },
       headerTitleStyle: { color: "#FFFFFF" },
       headerLeft: () => (
