@@ -107,15 +107,15 @@ export default function SessionDetails() {
           <View style={styles.statsRow}>
             <View style={[styles.statCard, { flex: 1.5, borderColor: '#3498DB', borderWidth: 1.5 }]}>
               <Text style={styles.statValue}>{sessionData.shooting_percentage}</Text>
-              <Text style={styles.statLabel}>Total Accuracy</Text>
+              <Text style={styles.statLabel}>Session Accuracy</Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>{sessionData.made_shots}</Text>
-              <Text style={styles.statLabel}>Total Made</Text>
+              <Text style={styles.statLabel}>Shots Made</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statValue}>{sessionData.missed_shots}</Text>
-              <Text style={styles.statLabel}>Total Missed</Text>
+              <Text style={styles.statValue}>{sessionData.total_shots}</Text>
+              <Text style={styles.statLabel}>Shots Taken</Text>
             </View>
           </View>
       </View>

@@ -5,10 +5,10 @@ import { AuthProvider } from './AuthContext'; // Import the AuthProvider
 
 const RootLayout: React.FC = () => {
   return (
-    // Wrap the entire app with AuthProvider
     <AuthProvider>
       <Stack
       screenOptions={{
+        gestureEnabled: false,
         headerBackVisible: false,
         animation: 'fade',
         headerStyle: {
@@ -21,7 +21,6 @@ const RootLayout: React.FC = () => {
               shadowRadius: 4,
             },
             android: {
-              // No need for elevation here, React Navigation handles shadow for Android
             },
           }),
         },
