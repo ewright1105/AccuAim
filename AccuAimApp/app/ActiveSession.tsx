@@ -1,142 +1,224 @@
-import { Text, View, Button, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { useEffect, useLayoutEffect, useState } from "react";
-import { useNavigation, useRouter } from "expo-router";
-import { useAuth } from "./AuthContext";
-import { useRoute } from "@react-navigation/native";
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  SafeAreaView,
+  Platform,
+  StatusBar,
+  PermissionsAndroid,
+} from 'react-native';
+import { BleManager, Device, Subscription } from 'react-native-ble-plx';
+import { Buffer } from 'buffer'; // Import Buffer for decoding
+
+// These UUIDs must match the ones on your ESP32
+const SERVICE_UUID = "bb8a0b11-545b-4d9e-9485-db89bea05d09";
+const CHARACTERISTIC_UUID = "204e46ad-df66-4989-aec3-244c6c24f023";
+
+const bleManager = new BleManager();
+
+type ConnectionStatus = 'Disconnected' | 'Scanning' | 'Connecting' | 'Connected';
 
 export default function ActiveSession() {
-    interface Shot {
-        ShotID: number;
-        BlockID: number;
-        ShotTime: string;
-        ShotPositionX: string; // Store as string to match the API response
-        ShotPositionY: string;
-        Result: "Made" | "Missed";
-      }
-    const route = useRoute();
-    const router = useRouter();
-    const navigation = useNavigation();
-    const { user } = useAuth();
-    const { SessionID } = route.params as { SessionID: number };
-    const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [shots, setShots] = useState<Shot[] | null>(null);
-    
+  const [device, setDevice] = useState<Device | null>(null);
+  const [impactCount, setImpactCount] = useState<number>(0);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('Disconnected');
+  const subscriptionRef = useRef<Subscription | null>(null);
 
-    useLayoutEffect(() => {
-        navigation.setOptions({
-        title: "You are in a Shooting Session",
-        });
-    }, [navigation]);
-
-    useEffect(() => {
-        if (user && SessionID) {
-            fetchSessionData(Number(user.UserID), SessionID);
-        } else {
-            setError("User not logged in or invalid session ID.");
-            setLoading(false);
-        }
-        }, [user, SessionID]);
-    
-        const fetchSessionData = async (userId: number, sessionId: number) => {
-        try {
-            setLoading(true);
-            const apiUrl = `http://172.20.10.6:4949/user/${userId}/sessions/${sessionId}`;
-            const response = await fetch(apiUrl);
-    
-            if (!response.ok) {
-            throw new Error("Failed to fetch session data.");
-            }
-    
-            const data: Shot[] = await response.json();
-            setShots(data);
-            setLoading(false);
-        } catch (err) {
-            console.error("Error fetching session data:", err);
-            setError("Error fetching session data.");
-            setLoading(false);
-        }
-        };
-
-    return (
-        <View style={styles.container}>
-        <Image
-            source={require("/Users/evanwright/personal-projects/AccuAim/AccuAimApp/assets/images/Screenshot 2024-12-30 at 6.45.08 PM.png")} // Adjust this path to match your logo file location
-            style={styles.logo}
-            resizeMode="contain"
-        />
-
-        {/* End Session Button */}
-        <TouchableOpacity
-            style={styles.button}
-            onPress={async () => {
-                try {
-                    const response = await fetch(`http://172.20.10.6:4949/user/${user?.UserID}/sessions/${SessionID}/active-session`, {
-                        method: 'PUT',
-                        body: JSON.stringify({ SessionID: SessionID }), // Sending SessionID in the body
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                    });
-                
-                    if (!response.ok) {
-                        throw new Error(`Failed to update session: ${response.statusText}`);
-                    }
-                
-                    const data = await response.json();
-                    console.log(data);
-                } catch (error) {
-                    console.error("Error during PUT request:", error);
-                    // Optionally show an alert or update your UI with the error
-                }
-            router.push("/Dashboard"); // Navigate to the Dashboard after ending the session
-            }}
-        >
-            <Text style={styles.buttonText}>End Session</Text>
-        </TouchableOpacity>
-        </View>
-    );
+  // Request Android permissions
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      const requestPermissions = async () => {
+        const res = await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+        ]);
+        console.log('Permissions result:', res);
+      };
+      requestPermissions();
     }
+  }, []);
 
-    const styles = StyleSheet.create({
+  // Handle device disconnection
+  useEffect(() => {
+    if (device) {
+      const subscription = bleManager.onDeviceDisconnected(device.id, (error, disconnectedDevice) => {
+        console.log(`Device ${disconnectedDevice?.name} disconnected`, error);
+        setConnectionStatus('Disconnected');
+        setDevice(null);
+        subscriptionRef.current?.remove();
+      });
+      return () => subscription.remove();
+    }
+  }, [device]);
+
+
+  const scanForDevices = () => {
+    setConnectionStatus('Scanning');
+    bleManager.startDeviceScan([SERVICE_UUID], null, (error, scannedDevice) => {
+      if (error) {
+        console.error("Scan Error:", error);
+        setConnectionStatus('Disconnected');
+        return;
+      }
+      if (scannedDevice && scannedDevice.name === 'AccuAim Sensor') {
+        bleManager.stopDeviceScan();
+        setConnectionStatus('Connecting');
+        connectToDevice(scannedDevice);
+      }
+    });
+  };
+
+  const connectToDevice = async (deviceToConnect: Device) => {
+    try {
+      const connectedDevice = await deviceToConnect.connect();
+      setDevice(connectedDevice);
+      await connectedDevice.discoverAllServicesAndCharacteristics();
+      setConnectionStatus('Connected');
+      console.log('Connection successful!');
+
+      // Subscribe to notifications
+      subscriptionRef.current = connectedDevice.monitorCharacteristicForService(
+        SERVICE_UUID,
+        CHARACTERISTIC_UUID,
+        (error, characteristic) => {
+          if (error) {
+            console.error("Monitor Error:", error);
+            return;
+          }
+          if (characteristic?.value) {
+            // The value is Base64 encoded. We need to decode it.
+            // Your ESP32 sends an `int`, which is typically 4 bytes.
+            const rawValue = Buffer.from(characteristic.value, 'base64');
+            const newCount = rawValue.readInt32LE(0); // Read as a 32-bit little-endian integer
+            setImpactCount(newCount);
+          }
+        }
+      );
+
+    } catch (e) {
+      console.error("Connection failed:", e);
+      setConnectionStatus('Disconnected');
+    }
+  };
+
+  const disconnectFromDevice = () => {
+    if (device) {
+      subscriptionRef.current?.remove();
+      device.cancelConnection();
+      console.log('Disconnected');
+    }
+  };
+
+  const handlePress = () => {
+    if (device) {
+      disconnectFromDevice();
+    } else {
+      scanForDevices();
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (connectionStatus) {
+      case 'Connected': return '#4CAF50';
+      case 'Scanning':
+      case 'Connecting': return '#FFC107';
+      default: return '#607D8B';
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.header}>AccuAim Sensor</Text>
+        
+        <View style={styles.statusContainer}>
+          <Text style={styles.statusText}>Status:</Text>
+          <View style={[styles.statusIndicator, { backgroundColor: getStatusColor() }]} />
+          <Text style={[styles.statusText, { color: getStatusColor() }]}>{connectionStatus}</Text>
+        </View>
+
+        <View style={styles.counterContainer}>
+          <Text style={styles.counterLabel}>Impacts</Text>
+          <Text style={styles.counterText}>{impactCount}</Text>
+        </View>
+
+        <TouchableOpacity style={styles.mainButton} onPress={handlePress}>
+          <Text style={styles.buttonText}>
+            {device ? 'Disconnect' : 'Scan for Sensor'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+// (Styles are the same as the previous answer, you can copy them from there)
+const styles = StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: '#1c1c1e',
+      paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    },
     container: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#121212", 
-        paddingHorizontal: 20,
+      flex: 1,
+      padding: 20,
+      alignItems: 'center',
+      justifyContent: 'space-around',
     },
-    logo: {
-        width: 200,
-        height: 200,
-        marginBottom: 20,
+    header: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: '#fff',
+      marginBottom: 20,
     },
-    title: {
-        fontSize: 32,
-        fontWeight: "bold",
-        marginBottom: 20,
-        color: "#F1C40F", 
+    statusContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 20,
     },
-    subtitle: {
-        fontSize: 18,
-        marginBottom: 40,
-        color: "#B0B0B0", 
+    statusText: {
+      fontSize: 18,
+      color: '#ccc',
+      marginRight: 8,
     },
-    button: {
-        backgroundColor: "#F1C40F", 
-        paddingVertical: 15,
-        paddingHorizontal: 30,
-        borderRadius: 8,
-        marginBottom: 20,
-        width: "80%",
-        alignItems: "center",
+    statusIndicator: {
+      width: 15,
+      height: 15,
+      borderRadius: 7.5,
+      marginRight: 8,
     },
-    signUpButton: {
-        backgroundColor: "#FFC107", 
+    counterContainer: {
+      alignItems: 'center',
+      marginVertical: 40,
+      padding: 20,
+      borderWidth: 2,
+      borderColor: '#007AFF',
+      borderRadius: 100,
+      width: 200,
+      height: 200,
+      justifyContent: 'center',
+    },
+    counterLabel: {
+      fontSize: 20,
+      color: '#aaa',
+    },
+    counterText: {
+      fontSize: 80,
+      fontWeight: 'bold',
+      color: '#fff',
+    },
+    mainButton: {
+      backgroundColor: '#007AFF',
+      paddingVertical: 15,
+      paddingHorizontal: 40,
+      borderRadius: 10,
     },
     buttonText: {
-        color: "#121212",
-        fontSize: 18,
-        fontWeight: "bold",
+      color: '#fff',
+      fontSize: 18,
+      fontWeight: '600',
     },
-    });
+  });
+  

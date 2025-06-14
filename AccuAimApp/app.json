@@ -35,8 +35,15 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-font"
-    ],
+      "expo-font",
+      [
+      "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": false,
+          "bluetoothAlwaysPermission": "Allow AccuAim to use Bluetooth"
+        }
+    ]
+  ],
     "experiments": {
       "typedRoutes": true
     }
